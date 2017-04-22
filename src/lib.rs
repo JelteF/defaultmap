@@ -30,9 +30,25 @@ mod hashmap {
         pub fn get_mut(&mut self, key: K) -> &mut V {
             self.map.entry(key).or_insert(self.default.clone())
         }
+    }
 
-        pub fn get(&mut self, key: K) -> &V {
-            self.get_mut(key)
+    trait Getter<K, V> {
+        fn get(&self, K) -> &V;
+    }
+
+    impl<'b, K, V: Clone> Getter<&'b K, V> for DefaultHashMap<K, V>
+        where K: Eq + Hash
+    {
+        fn get(&self, key: &'b K) -> &V {
+            self.map.get(key).unwrap_or(&self.default)
+        }
+    }
+
+    impl<K, V: Clone> Getter<K, V> for DefaultHashMap<K, V>
+        where K: Eq + Hash
+    {
+        fn get(&self, key: K) -> &V {
+            self.map.get(&key).unwrap_or(&self.default)
         }
     }
 
@@ -86,13 +102,24 @@ mod hashmap {
         q_func_mut!(remove, K, Option<V>);
     }
 
+
+    impl<'a, K: Eq + Hash, V: Clone> Index<&'a K> for DefaultHashMap<K, V> {
+        type Output = V;
+
+        fn index(&self, index: &K) -> &V {
+            self.get(index)
+        }
+    }
+
+
     impl<K: Eq + Hash, V: Clone> Index<K> for DefaultHashMap<K, V> {
         type Output = V;
 
-        fn index(&self, _: K) -> &V {
-            panic!("DefautHashMap doesn't implement indexing without mutating")
+        fn index(&self, index: K) -> &V {
+            self.get(&index)
         }
     }
+
 
     impl<K: Eq + Hash, V: Clone> IndexMut<K> for DefaultHashMap<K, V> {
         #[inline]
@@ -114,8 +141,16 @@ mod tests {
         let mut map: DefaultHashMap<i32, i32> = DefaultHashMap::new(0);
         *map.get_mut(0) += 1;
         map[1] += 4;
+        map[2] = map[0] + map.get(&1);
         assert_eq!(*map.get(0), 1);
-        assert_eq!(*map.get(1), 4);
-        assert_eq!(*map.get(2), 0);
+        assert_eq!(*map.get(&0), 1);
+        assert_eq!(map[0], 1);
+        assert_eq!(map[&0], 1);
+        assert_eq!(*map.get(&1), 4);
+        assert_eq!(*map.get(&2), 5);
+        assert_eq!(*map.get(999), 0);
+        assert_eq!(*map.get(&999), 0);
+        assert_eq!(map[999], 0);
+        assert_eq!(map[&999], 0);
     }
 }
