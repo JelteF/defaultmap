@@ -1,7 +1,9 @@
 [package]
 name = "defaultmap"
 version = "0.1.0"
+description = "Provides a normal map with default"
 authors = ["Jelte Fennema <github-tech@jeltef.nl>"]
+license = "MIT"
 
 [dependencies]
 delegatemethod = '0.2.2'
