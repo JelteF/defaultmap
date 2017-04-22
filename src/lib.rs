@@ -115,7 +115,7 @@ mod tests {
 
     #[test]
     fn add() {
-        let mut map: DefaultHashMap<i32, i32> = DefaultHashMap::new(0);
+        let mut map: DefaultHashMap<i32, i32> = DefaultHashMap::default();
         *map.get_mut(0) += 1;
         map[1] += 4;
         map[2] = map[0] + map.get(&1);
