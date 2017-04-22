@@ -11,15 +11,14 @@ mod hashmap {
     use std::collections::HashMap;
     use std::collections::hash_map::*;
     use std::borrow::Borrow;
-    use std;
 
     #[derive(PartialEq, Eq, Debug, Default)]
-    pub struct DefaultHashMap<K: Eq + std::hash::Hash, V: Clone> {
+    pub struct DefaultHashMap<K: Eq + Hash, V: Clone> {
         map: HashMap<K, V>,
         default: V,
     }
 
-    impl<K: Eq + std::hash::Hash, V: Clone> DefaultHashMap<K, V> {
+    impl<K: Eq + Hash, V: Clone> DefaultHashMap<K, V> {
         pub fn new(default: V) -> DefaultHashMap<K, V> {
             DefaultHashMap {
                 map: HashMap::new(),
@@ -37,7 +36,7 @@ mod hashmap {
     }
 
     delegate_method!{
-        impl<K: Eq + std::hash::Hash, V: Clone> DefaultHashMap<K, V> {
+        impl<K: Eq + Hash, V: Clone> DefaultHashMap<K, V> {
             map as HashMap:
                 pub fn capacity(&self) -> usize;
                 pub fn reserve(&mut self, additional: usize);
@@ -81,10 +80,11 @@ mod hashmap {
     }
 
 
-    impl<K: Eq + std::hash::Hash, V: Clone> DefaultHashMap<K, V> {
+    impl<K: Eq + Hash, V: Clone> DefaultHashMap<K, V> {
         q_func!(contains_key, K, bool);
         q_func_mut!(remove, K, Option<V>);
     }
+
 }
 
 
