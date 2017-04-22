@@ -30,25 +30,12 @@ mod hashmap {
         pub fn get_mut(&mut self, key: K) -> &mut V {
             self.map.entry(key).or_insert(self.default.clone())
         }
-    }
 
-    trait Getter<K, V> {
-        fn get(&self, K) -> &V;
-    }
-
-    impl<'b, K, V: Clone> Getter<&'b K, V> for DefaultHashMap<K, V>
-        where K: Eq + Hash
-    {
-        fn get(&self, key: &'b K) -> &V {
-            self.map.get(key).unwrap_or(&self.default)
-        }
-    }
-
-    impl<K, V: Clone> Getter<K, V> for DefaultHashMap<K, V>
-        where K: Eq + Hash
-    {
-        fn get(&self, key: K) -> &V {
-            self.map.get(&key).unwrap_or(&self.default)
+        pub fn get<Q, QB: Borrow<Q>>(&self, key: QB) -> &V
+            where K: Borrow<Q>,
+                  Q: ?Sized + Hash + Eq
+        {
+            self.map.get(key.borrow()).unwrap_or(&self.default)
         }
     }
 
@@ -103,23 +90,13 @@ mod hashmap {
     }
 
 
-    impl<'a, K: Eq + Hash, V: Clone> Index<&'a K> for DefaultHashMap<K, V> {
+    impl<'a, K: Eq + Hash, KB: Borrow<K>, V: Clone> Index<KB> for DefaultHashMap<K, V> {
         type Output = V;
 
-        fn index(&self, index: &K) -> &V {
+        fn index(&self, index: KB) -> &V {
             self.get(index)
         }
     }
-
-
-    impl<K: Eq + Hash, V: Clone> Index<K> for DefaultHashMap<K, V> {
-        type Output = V;
-
-        fn index(&self, index: K) -> &V {
-            self.get(&index)
-        }
-    }
-
 
     impl<K: Eq + Hash, V: Clone> IndexMut<K> for DefaultHashMap<K, V> {
         #[inline]
