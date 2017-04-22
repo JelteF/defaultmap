@@ -4,3 +4,4 @@ version = "0.1.0"
 authors = ["Jelte Fennema <github-tech@jeltef.nl>"]
 
 [dependencies]
+delegatemethod = '0.2.2'
