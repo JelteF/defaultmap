@@ -11,6 +11,7 @@ mod hashmap {
     use std::collections::HashMap;
     use std::collections::hash_map::*;
     use std::borrow::Borrow;
+    use std::ops::{Index, IndexMut};
 
     #[derive(PartialEq, Eq, Debug, Default)]
     pub struct DefaultHashMap<K: Eq + Hash, V: Clone> {
@@ -85,21 +86,36 @@ mod hashmap {
         q_func_mut!(remove, K, Option<V>);
     }
 
+    impl<K: Eq + Hash, V: Clone> Index<K> for DefaultHashMap<K, V> {
+        type Output = V;
+
+        fn index(&self, _: K) -> &V {
+            panic!("DefautHashMap doesn't implement indexing without mutating")
+        }
+    }
+
+    impl<K: Eq + Hash, V: Clone> IndexMut<K> for DefaultHashMap<K, V> {
+        #[inline]
+        fn index_mut(&mut self, index: K) -> &mut V {
+            self.get_mut(index)
+        }
+    }
+
+
 }
 
 
 #[cfg(test)]
 mod tests {
     use super::DefaultHashMap;
-    use std::collections::HashMap;
 
     #[test]
     fn add() {
         let mut map: DefaultHashMap<i32, i32> = DefaultHashMap::new(0);
-        let mut normalmap: HashMap<i32, i32> = HashMap::new();
-        *normalmap.entry(0).or_insert(0) += 1;
         *map.get_mut(0) += 1;
-        assert_eq!(*map.get(2), 0);
+        map[1] += 4;
         assert_eq!(*map.get(0), 1);
+        assert_eq!(*map.get(1), 4);
+        assert_eq!(*map.get(2), 0);
     }
 }
