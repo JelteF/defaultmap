@@ -4,3 +4,14 @@ version = "0.1.2-pre"
 description = "Provides a HashMap with an automatic default for missing keys."
 authors = ["Jelte Fennema <github-tech@jeltef.nl>"]
 license = "MIT"
+repository = "https://github.com/JelteF/defaultmap"
+documentation = "https://docs.rs/defaultmap"
+readme = "README.md"
+
+keywords = ["dict", "defaultdict", "defaulthashmap", "hashmap", "default"]
+
+categories = ["development-tools"]
+
+[badges]
+travis-ci = { repository = "JelteF/defaultmap" }
+appveyor = { repository = "JelteF/defaultmap" }
