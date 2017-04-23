@@ -128,7 +128,7 @@ mod hashmap {
     }
 
     /// Implements the `Index` trait so you can do `map[key]`.
-    /// Nonmutable indexing can ke done both with references and owned values as the key.
+    /// Nonmutable indexing can be done both by passing a reference or an owned value as the key.
     impl<'a, K: Eq + Hash, KB: Borrow<K>, V: Clone> Index<KB> for DefaultHashMap<K, V> {
         type Output = V;
 
@@ -138,7 +138,7 @@ mod hashmap {
     }
 
     /// Implements the `IndexMut` trait so you can do `map[key] = val`.
-    /// Mutably indexing can only be done with owned values as the key.
+    /// Mutably indexing can only be done when passing an owned value as the key.
     impl<K: Eq + Hash, V: Clone> IndexMut<K> for DefaultHashMap<K, V> {
         #[inline]
         fn index_mut(&mut self, index: K) -> &mut V {
@@ -148,7 +148,9 @@ mod hashmap {
 
 
 
-    /// These methods simply forward to the underlying `HashMMap`.
+    /// These methods simply forward to the underlying `HashMap`, see that
+    /// [documentation](https://doc.rust-lang.org/std/collections/struct.HashMap.html) for
+    /// the usage of these methods.
     impl<K: Eq + Hash, V: Clone> DefaultHashMap<K, V> {
         pub fn capacity(&self) -> usize {
             self.map.capacity()
