@@ -10,7 +10,7 @@ readme = "README.md"
 
 keywords = ["dict", "defaultdict", "defaulthashmap", "hashmap", "default"]
 
-categories = ["development-tools"]
+categories = ["development-tools", "data-structures"]
 
 include = [
     "src/**/*.rs",
