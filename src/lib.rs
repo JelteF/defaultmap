@@ -34,11 +34,12 @@
 //! ### Synonym lists
 //!
 //! Another way the default map can be used is using a map filled with other collections, such as a
-//! a Vec, a HashMap or even another default map.
+//! a `Vec`, a `HashMap` or even another default map.
 //! Next follows some code to create a map where we start with tuples of synonyms and we end with a
 //! map that contains the list of synonyms for each word.
 //!
 //! ```rust
+//! # use defaultmap::*;
 //!
 //! let synonym_tuples = [
 //!     ("nice", "sweet"),
@@ -48,7 +49,8 @@
 //!     ("entertaining", "absorbing"),
 //! ];
 //!
-//! let mut synonym_map: DefaultHashMap<&str, Vec<&str>> = DefaultHashMap::default();
+//! let mut synonym_map: DefaultHashMap<&str, Vec<&str>> = DefaultHashMap::new(vec![]);
+//! // DefaultHashMap::default() is equivalent.
 //!
 //! for &(l, r) in synonym_tuples.into_iter() {
 //!     synonym_map[l].push(r);
@@ -61,11 +63,6 @@
 //! ```
 //!
 
-#![recursion_limit="128"]
-#[macro_use]
-
-extern crate delegatemethod;
-
 pub use hashmap::DefaultHashMap;
 
 
@@ -76,13 +73,23 @@ mod hashmap {
     use std::borrow::Borrow;
     use std::ops::{Index, IndexMut};
 
+    /// A `HashMap` that has returns a default when keys are accessed that are not present.
     #[derive(PartialEq, Eq, Debug, Default)]
     pub struct DefaultHashMap<K: Eq + Hash, V: Clone> {
         map: HashMap<K, V>,
         default: V,
     }
 
+    //#[derive(Debug)]
+    //enum DefaultProvider<T> {
+    //    Constant(T),
+    //    Function(Box<Fn() -> T>),
+    //}
+
     impl<K: Eq + Hash, V: Clone> DefaultHashMap<K, V> {
+        /// Creates an empty `DefaultHashmap` with `default` as the default for missing keys.
+        /// When the provided `default` is equivalent to `V::default()` it is preferred to use
+        /// `DefaultHashMap::default()` instead.
         pub fn new(default: V) -> DefaultHashMap<K, V> {
             DefaultHashMap {
                 map: HashMap::new(),
@@ -90,69 +97,38 @@ mod hashmap {
             }
         }
 
-        pub fn get_mut(&mut self, key: K) -> &mut V {
-            self.map.entry(key).or_insert(self.default.clone())
+        /// Creates a `DefaultHashMap` based on a default and an already existiting `HashMap`.
+        pub fn new_with_map(default: V, map: HashMap<K, V>) -> DefaultHashMap<K, V> {
+            DefaultHashMap {
+                map: map,
+                default: default,
+            }
         }
 
+        /// Returns a reference to the value stored for the provided key.
+        /// If the key is not in the `DefaultHashMap` a reference to the default value is returned.
+        /// Usually the `map[key]` method of retrieving keys is prefered over using `get` directly.
+        /// This method accepts both references and owned values as the key.
         pub fn get<Q, QB: Borrow<Q>>(&self, key: QB) -> &V
             where K: Borrow<Q>,
                   Q: ?Sized + Hash + Eq
         {
             self.map.get(key.borrow()).unwrap_or(&self.default)
         }
-    }
 
-    delegate_method!{
-        impl<K: Eq + Hash, V: Clone> DefaultHashMap<K, V> {
-            map as HashMap:
-                pub fn capacity(&self) -> usize;
-                pub fn reserve(&mut self, additional: usize);
-                pub fn shrink_to_fit(&mut self);
-                pub fn keys(&self) -> Keys<K, V>;
-                pub fn values(&self) -> Values<K, V>;
-                pub fn values_mut(&mut self) -> ValuesMut<K, V>;
-                pub fn iter(&self) -> Iter<K, V>;
-                pub fn iter_mut(&mut self) -> IterMut<K, V>;
-                pub fn entry(&mut self, key: K) -> Entry<K, V>;
-                pub fn len(&self) -> usize;
-                pub fn is_empty(&self) -> bool;
-                pub fn drain(&mut self) -> Drain<K, V>;
-                pub fn clear(&mut self);
-                pub fn insert(&mut self, k: K, v: V) -> Option<V>;
+        /// Returns a mutable reference to the value stored for the provided key.
+        /// If there is no value stored for the key the default value is first inserted for this
+        /// key before returning the reference.
+        /// Usually the `map[key] = new_val` is prefered over using `get_mut` directly.
+        /// This method only accepts owned values as the key.
+        pub fn get_mut(&mut self, key: K) -> &mut V {
+            self.map.entry(key).or_insert(self.default.clone())
         }
+
     }
 
-    macro_rules! q_func {
-        ($name:ident, $K:ident, $($returns:ty),*) => (
-            pub fn $name<Q>(&self, k: &Q) -> ($($returns),*)
-                where K: Borrow<Q>,
-                      Q: Hash + Eq
-            {
-
-              self.map.$name(k)
-            }
-        )
-    }
-
-    macro_rules! q_func_mut {
-        ($name:ident, $K:ident, $($returns:ty),*) => (
-            pub fn $name<Q>(&mut self, k: &Q) -> ($($returns),*)
-                where K: Borrow<Q>,
-                      Q: Hash + Eq
-            {
-
-              self.map.$name(k)
-            }
-        )
-    }
-
-
-    impl<K: Eq + Hash, V: Clone> DefaultHashMap<K, V> {
-        q_func!(contains_key, K, bool);
-        q_func_mut!(remove, K, Option<V>);
-    }
-
-
+    /// Implements the `Index` trait so you can do `map[key]`.
+    /// Nonmutable indexing can ke done both with references and owned values as the key.
     impl<'a, K: Eq + Hash, KB: Borrow<K>, V: Clone> Index<KB> for DefaultHashMap<K, V> {
         type Output = V;
 
@@ -161,6 +137,8 @@ mod hashmap {
         }
     }
 
+    /// Implements the `IndexMut` trait so you can do `map[key] = val`.
+    /// Mutably indexing can only be done with owned values as the key.
     impl<K: Eq + Hash, V: Clone> IndexMut<K> for DefaultHashMap<K, V> {
         #[inline]
         fn index_mut(&mut self, index: K) -> &mut V {
@@ -168,6 +146,81 @@ mod hashmap {
         }
     }
 
+
+
+    /// These methods simply forward to the underlying `HashMMap`.
+    impl<K: Eq + Hash, V: Clone> DefaultHashMap<K, V> {
+        pub fn capacity(&self) -> usize {
+            self.map.capacity()
+        }
+        #[inline]
+        pub fn reserve(&mut self, additional: usize) {
+            self.map.reserve(additional)
+        }
+        #[inline]
+        pub fn shrink_to_fit(&mut self) {
+            self.map.shrink_to_fit()
+        }
+        #[inline]
+        pub fn keys(&self) -> Keys<K, V> {
+            self.map.keys()
+        }
+        #[inline]
+        pub fn values(&self) -> Values<K, V> {
+            self.map.values()
+        }
+        #[inline]
+        pub fn values_mut(&mut self) -> ValuesMut<K, V> {
+            self.map.values_mut()
+        }
+        #[inline]
+        pub fn iter(&self) -> Iter<K, V> {
+            self.map.iter()
+        }
+        #[inline]
+        pub fn iter_mut(&mut self) -> IterMut<K, V> {
+            self.map.iter_mut()
+        }
+        #[inline]
+        pub fn entry(&mut self, key: K) -> Entry<K, V> {
+            self.map.entry(key)
+        }
+        #[inline]
+        pub fn len(&self) -> usize {
+            self.map.len()
+        }
+        #[inline]
+        pub fn is_empty(&self) -> bool {
+            self.map.is_empty()
+        }
+        #[inline]
+        pub fn drain(&mut self) -> Drain<K, V> {
+            self.map.drain()
+        }
+        #[inline]
+        pub fn clear(&mut self) {
+            self.map.clear()
+        }
+        #[inline]
+        pub fn insert(&mut self, k: K, v: V) -> Option<V> {
+            self.map.insert(k, v)
+        }
+        #[inline]
+        pub fn contains_key<Q>(&self, k: &Q) -> (bool)
+            where K: Borrow<Q>,
+                  Q: Hash + Eq
+        {
+            self.map.contains_key(k)
+        }
+        #[inline]
+        pub fn remove<Q>(&mut self, k: &Q) -> (Option<V>)
+            where K: Borrow<Q>,
+                  Q: Hash + Eq
+        {
+            self.map.remove(k)
+        }
+
+    }
 
 }
 
