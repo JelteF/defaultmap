@@ -1,6 +1,6 @@
 [package]
 name = "defaultmap"
-version = "0.1.1-pre"
+version = "0.1.1"
 description = "Provides a normal map with default"
 authors = ["Jelte Fennema <github-tech@jeltef.nl>"]
 license = "MIT"
