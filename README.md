@@ -1,5 +1,11 @@
 # defaultmap
 
+[![Build Status](https://api.travis-ci.org/JelteF/defaultmap.svg?branch=master)](https://travis-ci.org/JelteF/defaultmap)
+[![Latest Version](https://img.shields.io/crates/v/defaultmap.svg)](https://crates.io/crates/defaultmap)
+[![Rust Documentation](https://img.shields.io/badge/api-rustdoc-blue.svg)](https://docs.rs/defaultmap/)
+[![GitHub license](https://img.shields.io/badge/license-MIT-blue.svg)](https://raw.githubusercontent.com/JelteF/defaultmap/master/LICENSE)
+
+
 It can be useful to not have to worry about missing keys in a map.
 If a key is requested that doesn't have a value a default value is simply returned.
 This is exactly what this library provides.
