@@ -12,6 +12,14 @@ keywords = ["dict", "defaultdict", "defaulthashmap", "hashmap", "default"]
 
 categories = ["development-tools"]
 
+include = [
+    "src/**/*.rs",
+    "Cargo.toml",
+    "LICENSE",
+    "README.md",
+]
+
+
 [badges]
 travis-ci = { repository = "JelteF/defaultmap" }
 appveyor = { repository = "JelteF/defaultmap" }
