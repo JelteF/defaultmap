@@ -7,7 +7,7 @@
 //! ### Counter
 //! A clear use case of this is when counting the unique elements in a list.
 //! Here you want to add one to the existing value in the map for that key.
-//! This is a problem for the first adition when there's no value for the key yet.
+//! This is a problem for the first addition when there's no value for the key yet.
 //! With this library you can specify when creating the map that the default value should be zero.
 //!
 
