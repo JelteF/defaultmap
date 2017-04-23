@@ -65,9 +65,6 @@ script:
 
 after_script: set +e
 
-before_deploy:
-  - sh ci/before_deploy.sh
-
 cache: cargo
 before_cache:
   # Travis can't cache files that are not readable by "others"
