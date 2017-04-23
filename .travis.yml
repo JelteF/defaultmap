@@ -70,6 +70,7 @@ before_install: set -e
 install:
   - source ~/.cargo/env || true
   - sh ci/install.sh
+  - cargo install cargo-kcov
   - cargo kcov --print-install-kcov-sh | sh
 
 script:
