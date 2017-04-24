@@ -212,18 +212,17 @@ mod hashmap {
         #[inline]
         pub fn contains_key<Q>(&self, k: &Q) -> (bool)
             where K: Borrow<Q>,
-                  Q: Hash + Eq
+                  Q: ?Sized + Hash + Eq
         {
             self.map.contains_key(k)
         }
         #[inline]
         pub fn remove<Q>(&mut self, k: &Q) -> (Option<V>)
             where K: Borrow<Q>,
-                  Q: Hash + Eq
+                  Q: ?Sized + Hash + Eq
         {
             self.map.remove(k)
         }
-
     }
 
 }
