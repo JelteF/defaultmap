@@ -34,7 +34,7 @@
 //! ### Synonym lists
 //!
 //! Another way the default map can be used is using a map filled with other collections, such as a
-//! a `Vec`, a `HashMap` or even another default map.
+//! `Vec`, a `HashMap` or even another default map.
 //! Next follows some code to create a map where we start with tuples of synonyms and we end with a
 //! map that contains the list of synonyms for each word.
 //!
@@ -81,6 +81,10 @@ mod hashmap {
     }
 
     impl<K: Eq + Hash, V: Default + Clone> Default for DefaultHashMap<K, V> {
+        /// The `default()` constructor creates an empty DefaultHashMap with the default of `V`
+        /// as the default for missing keys.
+        /// This is desired default for most use cases, if your case requires a
+        /// different default you should use the `new()` constructor.
         fn default() -> DefaultHashMap<K, V> {
             DefaultHashMap {
                 map: HashMap::default(),
@@ -100,7 +104,7 @@ mod hashmap {
             }
         }
 
-        /// Creates a `DefaultHashMap` based on a default and an already existiting `HashMap`.
+        /// Creates a `DefaultHashMap` based on a default and an already existing `HashMap`.
         pub fn new_with_map(default: V, map: HashMap<K, V>) -> DefaultHashMap<K, V> {
             DefaultHashMap {
                 map: map,
