@@ -93,6 +93,28 @@ mod hashmap {
         }
     }
 
+    impl<K: Eq + Hash, V: Default + Clone> From<HashMap<K, V>> for DefaultHashMap<K, V> {
+        /// If you already have a `HashMap` that you would like to convert to a
+        /// `DefaultHashMap` you can use the `into()` method on the `HashMap` or the
+        /// `from()` constructor of `DefaultHashMap`.
+        /// The default value for missing keys will be `V::default()`,
+        /// if this is not desired `DefaultHashMap::new_with_map()` should be used.
+        fn from(map: HashMap<K, V>) -> DefaultHashMap<K, V> {
+            DefaultHashMap {
+                map: map,
+                default: V::default(),
+            }
+        }
+    }
+
+    impl<K: Eq + Hash, V: Clone> Into<HashMap<K, V>> for DefaultHashMap<K, V> {
+        /// The into method can be used to convert a `DefaultHashMap` back into a
+        /// `HashMap`.
+        fn into(self) -> HashMap<K, V> {
+            self.map
+        }
+    }
+
     impl<K: Eq + Hash, V: Clone> DefaultHashMap<K, V> {
         /// Creates an empty `DefaultHashmap` with `default` as the default for missing keys.
         /// When the provided `default` is equivalent to `V::default()` it is preferred to use
@@ -105,6 +127,8 @@ mod hashmap {
         }
 
         /// Creates a `DefaultHashMap` based on a default and an already existing `HashMap`.
+        /// If `V::default()` is the supplied default, usage of the `from()` constructor or the
+        /// `into()` method on the original `HashMap` is preferred.
         pub fn new_with_map(default: V, map: HashMap<K, V>) -> DefaultHashMap<K, V> {
             DefaultHashMap {
                 map: map,
