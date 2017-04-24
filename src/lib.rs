@@ -295,13 +295,11 @@ mod tests {
 
     #[test]
     fn synonyms() {
-        let synonym_tuples = [
-            ("nice", "sweet"),
-            ("sweet", "candy"),
-            ("nice", "entertaining"),
-            ("nice", "good"),
-            ("entertaining", "absorbing"),
-        ];
+        let synonym_tuples = [("nice", "sweet"),
+                              ("sweet", "candy"),
+                              ("nice", "entertaining"),
+                              ("nice", "good"),
+                              ("entertaining", "absorbing")];
 
         let mut synonym_map: DefaultHashMap<&str, Vec<&str>> = DefaultHashMap::default();
 
