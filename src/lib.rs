@@ -74,17 +74,20 @@ mod hashmap {
     use std::ops::{Index, IndexMut};
 
     /// A `HashMap` that has returns a default when keys are accessed that are not present.
-    #[derive(PartialEq, Eq, Debug, Default)]
+    #[derive(PartialEq, Eq, Debug)]
     pub struct DefaultHashMap<K: Eq + Hash, V: Clone> {
         map: HashMap<K, V>,
         default: V,
     }
 
-    //#[derive(Debug)]
-    //enum DefaultProvider<T> {
-    //    Constant(T),
-    //    Function(Box<Fn() -> T>),
-    //}
+    impl<K: Eq + Hash, V: Default + Clone> Default for DefaultHashMap<K, V> {
+        fn default() -> DefaultHashMap<K, V> {
+            DefaultHashMap {
+                map: HashMap::default(),
+                default: V::default(),
+            }
+        }
+    }
 
     impl<K: Eq + Hash, V: Clone> DefaultHashMap<K, V> {
         /// Creates an empty `DefaultHashmap` with `default` as the default for missing keys.
@@ -124,7 +127,6 @@ mod hashmap {
         pub fn get_mut(&mut self, key: K) -> &mut V {
             self.map.entry(key).or_insert(self.default.clone())
         }
-
     }
 
     /// Implements the `Index` trait so you can do `map[key]`.
@@ -287,4 +289,20 @@ mod tests {
         assert_eq!(synonym_map["evil"], Vec::<&str>::new());
         // assert!(false)
     }
+
+    #[derive(Clone)]
+    struct Clonable;
+
+    #[derive(Default, Clone)]
+    struct DefaultableValue;
+
+    #[derive(Hash, Eq, PartialEq)]
+    struct Hashable(i32);
+
+    #[test]
+    fn minimal_derives() {
+        let minimal: DefaultHashMap<Hashable, Clonable> = DefaultHashMap::new(Clonable);
+        let clonable: DefaultHashMap<Hashable, DefaultableValue> = DefaultHashMap::default();
+    }
+
 }
