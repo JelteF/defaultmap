@@ -259,17 +259,30 @@ mod hashmap {
 macro_rules! defaulthashmap {
     (@single $($x:tt)*) => (());
     (@count $($rest:expr),*) => (<[()]>::len(&[$(defaulthashmap!(@single $rest)),*]));
-
-    ($($key:expr => $value:expr,)+) => { defaulthashmap!($($key => $value),+) };
-    ($($key:expr => $value:expr),*) => {
+    (@hashmap $($key:expr => $value:expr),*) => {
         {
             let _cap = defaulthashmap!(@count $($key),*);
             let mut _map = ::std::collections::HashMap::with_capacity(_cap);
             $(
                 _map.insert($key, $value);
             )*
-            let _defmap: DefaultHashMap<_,_> = _map.into();
-            _defmap
+            _map
+        }
+    };
+
+    ($($key:expr => $value:expr,)+) => { defaulthashmap!($($key => $value),+) };
+    ($($key:expr => $value:expr),*) => {
+        {
+            let _map = defaulthashmap!(@hashmap $($key => $value),*);
+            DefaultHashMap::from(_map)
+        }
+    };
+
+    ($default:expr$(, $key:expr => $value:expr)+ ,) => { defaulthashmap!($default, $($key => $value),+) };
+    ($default:expr$(, $key:expr => $value:expr)*) => {
+        {
+            let _map = defaulthashmap!(@hashmap $($key => $value),*);
+            DefaultHashMap::new_with_map($default, _map)
         }
     };
 }
@@ -282,15 +295,34 @@ mod tests {
 
     #[test]
     fn macro_test() {
+        // empty default
         let macro_map: DefaultHashMap<i32, i32> = defaulthashmap!{};
         let normal_map = DefaultHashMap::<i32, i32>::default();
         assert_eq!(macro_map, normal_map);
 
+        // with content
         let macro_map: DefaultHashMap<_, _> = defaulthashmap!{
             1 => 2,
             2 => 3,
         };
         let mut normal_map = DefaultHashMap::<_, _>::default();
+        normal_map[1] = 2;
+        normal_map[2] = 3;
+        assert_eq!(macro_map, normal_map);
+
+        // empty with custom default
+        let macro_map: DefaultHashMap<i32, i32> = defaulthashmap!{5};
+        let normal_map = DefaultHashMap::<i32, i32>::new(5);
+        assert_eq!(macro_map, normal_map);
+
+
+        // filled hashmap with custom default
+        let macro_map: DefaultHashMap<_, _> = defaulthashmap!{
+            5,
+            1 => 2,
+            2 => 3,
+        };
+        let mut normal_map = DefaultHashMap::<_, _>::new(5);
         normal_map[1] = 2;
         normal_map[2] = 3;
         assert_eq!(macro_map, normal_map);
