@@ -284,7 +284,7 @@ macro_rules! defaulthashmap {
     ($($key:expr => $value:expr),*) => {
         {
             let _map = defaulthashmap!(@hashmap $($key => $value),*);
-            DefaultHashMap::from(_map)
+            $crate::DefaultHashMap::from(_map)
         }
     };
 
@@ -292,7 +292,7 @@ macro_rules! defaulthashmap {
     ($default:expr$(, $key:expr => $value:expr)*) => {
         {
             let _map = defaulthashmap!(@hashmap $($key => $value),*);
-            DefaultHashMap::new_with_map($default, _map)
+            $crate::DefaultHashMap::new_with_map($default, _map)
         }
     };
 }
