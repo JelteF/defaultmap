@@ -12,10 +12,13 @@
 //!
 
 //! ```rust
+//! # #[macro_use] extern crate defaultmap;
 //! # use defaultmap::*;
+//! # fn main() {
+//!
 //! let nums = [1, 4, 3, 3, 4, 2, 4];
-//! let mut counts:  DefaultHashMap<i32, i32> = DefaultHashMap::new(0);
-//! // DefaultHashMap::default() is equivalent.
+//! let mut counts: DefaultHashMap<i32, i32> = defaulthashmap!();
+//! // DefaultHashMap::new(0) is equivalent.
 //!
 //! for num in nums.into_iter() {
 //!     counts[*num] += 1;
@@ -28,6 +31,8 @@
 //! # assert_eq!(1, counts[2]);
 //! # assert_eq!(2, counts[3]);
 //! # assert_eq!(3, counts[4]);
+//! # }
+//!
 //! ```
 //!
 
@@ -39,7 +44,9 @@
 //! map that contains the list of synonyms for each word.
 //!
 //! ```rust
+//! # #[macro_use] extern crate defaultmap;
 //! # use defaultmap::*;
+//! # fn main() {
 //!
 //! let synonym_tuples = [
 //!     ("nice", "sweet"),
@@ -49,8 +56,8 @@
 //!     ("entertaining", "absorbing"),
 //! ];
 //!
-//! let mut synonym_map: DefaultHashMap<&str, Vec<&str>> = DefaultHashMap::new(vec![]);
-//! // DefaultHashMap::default() is equivalent.
+//! let mut synonym_map: DefaultHashMap<&str, Vec<&str>> = defaulthashmap!();
+//! // DefaultHashMap::new(vec![]) is equivalent.
 //!
 //! for &(l, r) in synonym_tuples.into_iter() {
 //!     synonym_map[l].push(r);
@@ -60,6 +67,8 @@
 //! assert_eq!(synonym_map["good"], vec!["nice"]);
 //! assert_eq!(synonym_map["nice"], vec!["sweet", "entertaining", "good"]);
 //! assert_eq!(synonym_map["evil"], Vec::<&str>::new());
+//!
+//! # }
 //! ```
 //!
 
@@ -255,10 +264,11 @@ mod hashmap {
 
 }
 
-// Copied almost verbatim from maplit
+#[macro_export]
 macro_rules! defaulthashmap {
     (@single $($x:tt)*) => (());
     (@count $($rest:expr),*) => (<[()]>::len(&[$(defaulthashmap!(@single $rest)),*]));
+    // Copied almost verbatim from maplit
     (@hashmap $($key:expr => $value:expr),*) => {
         {
             let _cap = defaulthashmap!(@count $($key),*);
