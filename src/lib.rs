@@ -255,11 +255,46 @@ mod hashmap {
 
 }
 
+// Copied almost verbatim from maplit
+macro_rules! defaulthashmap {
+    (@single $($x:tt)*) => (());
+    (@count $($rest:expr),*) => (<[()]>::len(&[$(defaulthashmap!(@single $rest)),*]));
+
+    ($($key:expr => $value:expr,)+) => { defaulthashmap!($($key => $value),+) };
+    ($($key:expr => $value:expr),*) => {
+        {
+            let _cap = defaulthashmap!(@count $($key),*);
+            let mut _map = ::std::collections::HashMap::with_capacity(_cap);
+            $(
+                _map.insert($key, $value);
+            )*
+            let _defmap: DefaultHashMap<_,_> = _map.into();
+            _defmap
+        }
+    };
+}
+
 
 #[cfg(test)]
 mod tests {
     use super::DefaultHashMap;
     use std::collections::HashMap;
+
+    #[test]
+    fn macro_test() {
+        let macro_map: DefaultHashMap<i32, i32> = defaulthashmap!{};
+        let normal_map = DefaultHashMap::<i32, i32>::default();
+        assert_eq!(macro_map, normal_map);
+
+        let macro_map: DefaultHashMap<_, _> = defaulthashmap!{
+            1 => 2,
+            2 => 3,
+        };
+        let mut normal_map = DefaultHashMap::<_, _>::default();
+        normal_map[1] = 2;
+        normal_map[2] = 3;
+        assert_eq!(macro_map, normal_map);
+    }
 
     #[test]
     fn add() {
