@@ -264,6 +264,35 @@ mod hashmap {
 
 }
 
+/// The `defaulthashmap!` macro can be used to easily initialize a `DefaultHashMap` in the
+/// following ways:
+///
+/// ```
+/// # #[macro_use] extern crate defaultmap;
+/// # use defaultmap::*;
+/// # fn main() {
+/// // An empty map with the default as default
+/// let _: DefaultHashMap<i32, i32> = defaulthashmap!{};
+///
+/// // An empty map with a specified default
+/// let _: DefaultHashMap<i32, i32> = defaulthashmap!{5};
+///
+/// // A prefilled map with the default as the default
+/// let _: DefaultHashMap<i32, i32> = defaulthashmap!{
+///     1 => 10,
+///     5 => 20,
+///     6 => 30,
+/// };
+///
+/// // A prefilled map with a custom default
+/// let _: DefaultHashMap<i32, i32> = defaulthashmap!{
+///     5,
+///     1 => 10,
+///     5 => 20,
+///     6 => 30,
+/// };
+///
+/// # }
 #[macro_export]
 macro_rules! defaulthashmap {
     (@single $($x:tt)*) => (());
