@@ -259,6 +259,7 @@ mod hashmap {
 #[cfg(test)]
 mod tests {
     use super::DefaultHashMap;
+    use std::collections::HashMap;
 
     #[test]
     fn add() {
@@ -326,8 +327,21 @@ mod tests {
 
     #[test]
     fn minimal_derives() {
-        let minimal: DefaultHashMap<Hashable, Clonable> = DefaultHashMap::new(Clonable);
-        let clonable: DefaultHashMap<Hashable, DefaultableValue> = DefaultHashMap::default();
+        let _: DefaultHashMap<Hashable, Clonable> = DefaultHashMap::new(Clonable);
+        let _: DefaultHashMap<Hashable, DefaultableValue> = DefaultHashMap::default();
+    }
+
+    #[test]
+    fn from() {
+        let normal: HashMap<i32, i32> = vec![(0, 1), (2, 3)].into_iter().collect();
+        let mut default: DefaultHashMap<_, _> = normal.into();
+        default.get_mut(4);
+        assert_eq!(default[0], 1);
+        assert_eq!(default[2], 3);
+        assert_eq!(default[1], 0);
+        assert_eq!(default[4], 0);
+        let expected: HashMap<i32, i32> = vec![(0, 1), (2, 3), (4, 0)].into_iter().collect();
+        assert_eq!(expected, default.into());
     }
 
 }
