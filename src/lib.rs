@@ -260,6 +260,12 @@ mod hashmap {
         {
             self.map.remove(k)
         }
+        #[inline]
+        pub fn retain<F>(&mut self, f: F) -> ()
+            where F: FnMut(&K, &mut V) -> bool
+        {
+            self.map.retain(f)
+        }
     }
 
 }
