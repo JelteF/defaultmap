@@ -83,7 +83,7 @@ mod hashmap {
     use std::ops::{Index, IndexMut};
 
     /// A `HashMap` that has returns a default when keys are accessed that are not present.
-    #[derive(PartialEq, Eq, Debug)]
+    #[derive(PartialEq, Eq, Clone, Debug)]
     pub struct DefaultHashMap<K: Eq + Hash, V: Clone> {
         map: HashMap<K, V>,
         default: V,
