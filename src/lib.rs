@@ -74,12 +74,11 @@
 
 pub use hashmap::DefaultHashMap;
 
-
 mod hashmap {
-    use std::hash::Hash;
+    use std::borrow::Borrow;
     use std::collections::HashMap;
     use std::collections::hash_map::*;
-    use std::borrow::Borrow;
+    use std::hash::Hash;
     use std::ops::{Index, IndexMut};
 
     /// A `HashMap` that has returns a default when keys are accessed that are not present.
@@ -150,8 +149,9 @@ mod hashmap {
         /// Usually the `map[key]` method of retrieving keys is prefered over using `get` directly.
         /// This method accepts both references and owned values as the key.
         pub fn get<Q, QB: Borrow<Q>>(&self, key: QB) -> &V
-            where K: Borrow<Q>,
-                  Q: ?Sized + Hash + Eq
+        where
+            K: Borrow<Q>,
+            Q: ?Sized + Hash + Eq,
         {
             self.map.get(key.borrow()).unwrap_or(&self.default)
         }
@@ -184,8 +184,6 @@ mod hashmap {
             self.get_mut(index)
         }
     }
-
-
 
     /// These methods simply forward to the underlying `HashMap`, see that
     /// [documentation](https://doc.rust-lang.org/std/collections/struct.HashMap.html) for
@@ -248,21 +246,24 @@ mod hashmap {
         }
         #[inline]
         pub fn contains_key<Q>(&self, k: &Q) -> (bool)
-            where K: Borrow<Q>,
-                  Q: ?Sized + Hash + Eq
+        where
+            K: Borrow<Q>,
+            Q: ?Sized + Hash + Eq,
         {
             self.map.contains_key(k)
         }
         #[inline]
         pub fn remove<Q>(&mut self, k: &Q) -> (Option<V>)
-            where K: Borrow<Q>,
-                  Q: ?Sized + Hash + Eq
+        where
+            K: Borrow<Q>,
+            Q: ?Sized + Hash + Eq,
         {
             self.map.remove(k)
         }
         #[inline]
         pub fn retain<F>(&mut self, f: F) -> ()
-            where F: FnMut(&K, &mut V) -> bool
+        where
+            F: FnMut(&K, &mut V) -> bool,
         {
             self.map.retain(f)
         }
@@ -332,7 +333,6 @@ macro_rules! defaulthashmap {
     };
 }
 
-
 #[cfg(test)]
 mod tests {
     use super::DefaultHashMap;
@@ -359,7 +359,6 @@ mod tests {
         let macro_map: DefaultHashMap<i32, i32> = defaulthashmap!{5};
         let normal_map = DefaultHashMap::<i32, i32>::new(5);
         assert_eq!(macro_map, normal_map);
-
 
         // filled hashmap with custom default
         let macro_map: DefaultHashMap<_, _> = defaulthashmap!{
@@ -408,11 +407,13 @@ mod tests {
 
     #[test]
     fn synonyms() {
-        let synonym_tuples = [("nice", "sweet"),
-                              ("sweet", "candy"),
-                              ("nice", "entertaining"),
-                              ("nice", "good"),
-                              ("entertaining", "absorbing")];
+        let synonym_tuples = [
+            ("nice", "sweet"),
+            ("sweet", "candy"),
+            ("nice", "entertaining"),
+            ("nice", "good"),
+            ("entertaining", "absorbing"),
+        ];
 
         let mut synonym_map: DefaultHashMap<&str, Vec<&str>> = DefaultHashMap::default();
 
