@@ -80,6 +80,7 @@ mod hashmap {
     use std::collections::hash_map::*;
     use std::hash::Hash;
     use std::ops::{Index, IndexMut};
+    use std::iter::{IntoIterator, FromIterator,};
 
     /// A `HashMap` that returns a default when keys are accessed that are not present.
     #[derive(PartialEq, Eq, Clone, Debug)]
@@ -266,6 +267,13 @@ mod hashmap {
             F: FnMut(&K, &mut V) -> bool,
         {
             self.map.retain(f)
+        }
+    }
+
+    impl<K: Eq + Hash, V: Default + Clone,> FromIterator<(K, V,)> for DefaultHashMap<K, V,> {
+        fn from_iter<I>(iter: I) -> Self
+            where I: IntoIterator<Item = (K, V,)> {
+            Self { map: HashMap::from_iter(iter), default: V::default(), }
         }
     }
 
