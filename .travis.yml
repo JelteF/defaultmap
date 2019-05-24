@@ -71,7 +71,7 @@ install:
   - source ~/.cargo/env || true
   - sh ci/install.sh
   - cargo install cargo-kcov --force # don't fail if it's already installed
-  - cargo kcov --print-install-kcov-sh | sh
+  - ./install_kcov.sh
 
 script:
   - bash ci/script.sh
