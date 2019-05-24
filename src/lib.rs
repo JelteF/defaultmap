@@ -110,7 +110,7 @@ mod hashmap {
         /// if this is not desired `DefaultHashMap::new_with_map()` should be used.
         fn from(map: HashMap<K, V>) -> DefaultHashMap<K, V> {
             DefaultHashMap {
-                map: map,
+                map,
                 default: V::default(),
             }
         }
@@ -131,7 +131,7 @@ mod hashmap {
         pub fn new(default: V) -> DefaultHashMap<K, V> {
             DefaultHashMap {
                 map: HashMap::new(),
-                default: default,
+                default,
             }
         }
 
@@ -139,10 +139,7 @@ mod hashmap {
         /// If `V::default()` is the supplied default, usage of the `from()` constructor or the
         /// `into()` method on the original `HashMap` is preferred.
         pub fn new_with_map(default: V, map: HashMap<K, V>) -> DefaultHashMap<K, V> {
-            DefaultHashMap {
-                map: map,
-                default: default,
-            }
+            DefaultHashMap { map, default }
         }
 
         /// Returns a reference to the value stored for the provided key.
@@ -163,7 +160,8 @@ mod hashmap {
         /// Usually the `map[key] = new_val` is prefered over using `get_mut` directly.
         /// This method only accepts owned values as the key.
         pub fn get_mut(&mut self, key: K) -> &mut V {
-            self.map.entry(key).or_insert(self.default.clone())
+            let default = &self.default;
+            self.map.entry(key).or_insert_with(|| default.clone())
         }
     }
 
@@ -262,7 +260,7 @@ mod hashmap {
             self.map.remove(k)
         }
         #[inline]
-        pub fn retain<F>(&mut self, f: F) -> ()
+        pub fn retain<F>(&mut self, f: F)
         where
             F: FnMut(&K, &mut V) -> bool,
         {
