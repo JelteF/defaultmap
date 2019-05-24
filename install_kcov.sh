@@ -2,7 +2,7 @@
 set -euxo pipefail
 
 command_exists() {
-    command -v $1 &> /dev/null
+    command -v "$1" &> /dev/null
 }
 
 CARGO_HOME=${CARGO_HOME:-${HOME}/.cargo}
@@ -16,15 +16,15 @@ KCOV_VERSION=${KCOV_VERSION:-$KCOV_DEFAULT_VERSION}
 
 KCOV_TGZ="https://github.com/SimonKagstrom/kcov/archive/${KCOV_VERSION}.tar.gz"
 
-rm -rf kcov-${KCOV_VERSION}/
-mkdir kcov-${KCOV_VERSION}
-curl -L --retry 3 "${KCOV_TGZ}" | tar xzvf - -C kcov-${KCOV_VERSION} --strip-components 1
+rm -rf "kcov-${KCOV_VERSION}/"
+mkdir "kcov-${KCOV_VERSION}"
+curl -L --retry 3 "${KCOV_TGZ}" | tar xzvf - -C "kcov-${KCOV_VERSION}" --strip-components 1
 
 num_proc=1
 # If PARALLEL_BUILD environment variable is set then parallel build is enabled
 if [ "${PARALLEL_BUILD:-}" != "" ]; then
     # If PARALLEL_BUILD content is a number then use it as number of parallel jobs
-    if [ ! -z "${PARALLEL_BUILD##*[!0-9]*}" ]; then
+    if [ -n "${PARALLEL_BUILD##*[!0-9]*}" ]; then
         num_proc=${PARALLEL_BUILD}
     else
         # Try to determine the number of available CPUs
@@ -36,7 +36,7 @@ if [ "${PARALLEL_BUILD:-}" != "" ]; then
     fi
 fi
 
-cd kcov-${KCOV_VERSION}
+cd "kcov-${KCOV_VERSION}"
 mkdir build
 cd build
 if [ "$(uname)" = Darwin ]; then
@@ -45,6 +45,6 @@ if [ "$(uname)" = Darwin ]; then
     cp src/Release/kcov src/Release/libkcov_system_lib.so "${CARGO_HOME}/bin"
 else
     cmake -DCMAKE_BUILD_TYPE=RelWithDebInfo ..
-    make -j ${num_proc}
+    make -j "${num_proc}"
     cp src/kcov src/libkcov_sowrapper.so "${CARGO_HOME}/bin"
 fi
