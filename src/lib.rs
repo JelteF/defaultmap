@@ -76,11 +76,11 @@ pub use hashmap::DefaultHashMap;
 
 mod hashmap {
     use std::borrow::Borrow;
-    use std::collections::HashMap;
     use std::collections::hash_map::*;
+    use std::collections::HashMap;
     use std::hash::Hash;
+    use std::iter::{FromIterator, IntoIterator};
     use std::ops::{Index, IndexMut};
-    use std::iter::{IntoIterator, FromIterator,};
 
     /// A `HashMap` that returns a default when keys are accessed that are not present.
     #[derive(PartialEq, Eq, Clone, Debug)]
@@ -270,10 +270,15 @@ mod hashmap {
         }
     }
 
-    impl<K: Eq + Hash, V: Default + Clone,> FromIterator<(K, V,)> for DefaultHashMap<K, V,> {
+    impl<K: Eq + Hash, V: Default + Clone> FromIterator<(K, V)> for DefaultHashMap<K, V> {
         fn from_iter<I>(iter: I) -> Self
-            where I: IntoIterator<Item = (K, V,)> {
-            Self { map: HashMap::from_iter(iter), default: V::default(), }
+        where
+            I: IntoIterator<Item = (K, V)>,
+        {
+            Self {
+                map: HashMap::from_iter(iter),
+                default: V::default(),
+            }
         }
     }
 
@@ -349,12 +354,12 @@ mod tests {
     #[test]
     fn macro_test() {
         // empty default
-        let macro_map: DefaultHashMap<i32, i32> = defaulthashmap!{};
+        let macro_map: DefaultHashMap<i32, i32> = defaulthashmap! {};
         let normal_map = DefaultHashMap::<i32, i32>::default();
         assert_eq!(macro_map, normal_map);
 
         // with content
-        let macro_map: DefaultHashMap<_, _> = defaulthashmap!{
+        let macro_map: DefaultHashMap<_, _> = defaulthashmap! {
             1 => 2,
             2 => 3,
         };
@@ -364,12 +369,12 @@ mod tests {
         assert_eq!(macro_map, normal_map);
 
         // empty with custom default
-        let macro_map: DefaultHashMap<i32, i32> = defaulthashmap!{5};
+        let macro_map: DefaultHashMap<i32, i32> = defaulthashmap! {5};
         let normal_map = DefaultHashMap::<i32, i32>::new(5);
         assert_eq!(macro_map, normal_map);
 
         // filled hashmap with custom default
-        let macro_map: DefaultHashMap<_, _> = defaulthashmap!{
+        let macro_map: DefaultHashMap<_, _> = defaulthashmap! {
             5,
             1 => 2,
             2 => 3,
