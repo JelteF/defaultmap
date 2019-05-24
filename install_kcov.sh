@@ -1,5 +1,5 @@
 #!/bin/sh
-set -eu
+set -euxo pipefail
 
 command_exists() {
     command -v $1 &> /dev/null
