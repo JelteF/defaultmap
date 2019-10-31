@@ -405,7 +405,7 @@ mod tests {
     fn counter() {
         let nums = [1, 4, 3, 3, 4, 2, 4];
         let mut counts: DefaultHashMap<i32, i32> = DefaultHashMap::default();
-        for num in nums.into_iter() {
+        for num in nums.iter() {
             counts[*num] += 1;
         }
 
@@ -428,7 +428,7 @@ mod tests {
 
         let mut synonym_map: DefaultHashMap<&str, Vec<&str>> = DefaultHashMap::default();
 
-        for &(l, r) in synonym_tuples.into_iter() {
+        for &(l, r) in synonym_tuples.iter() {
             synonym_map[l].push(r);
             synonym_map[r].push(l);
         }
