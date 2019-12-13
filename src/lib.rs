@@ -147,9 +147,9 @@ mod hashmap {
         /// Usually the `map[key]` method of retrieving keys is prefered over using `get` directly.
         /// This method accepts both references and owned values as the key.
         pub fn get<Q, QB: Borrow<Q>>(&self, key: QB) -> &V
-        where
-            K: Borrow<Q>,
-            Q: ?Sized + Hash + Eq,
+            where
+                K: Borrow<Q>,
+                Q: ?Sized + Hash + Eq,
         {
             self.map.get(key.borrow()).unwrap_or(&self.default)
         }
@@ -245,24 +245,24 @@ mod hashmap {
         }
         #[inline]
         pub fn contains_key<Q>(&self, k: &Q) -> (bool)
-        where
-            K: Borrow<Q>,
-            Q: ?Sized + Hash + Eq,
+            where
+                K: Borrow<Q>,
+                Q: ?Sized + Hash + Eq,
         {
             self.map.contains_key(k)
         }
         #[inline]
         pub fn remove<Q>(&mut self, k: &Q) -> (Option<V>)
-        where
-            K: Borrow<Q>,
-            Q: ?Sized + Hash + Eq,
+            where
+                K: Borrow<Q>,
+                Q: ?Sized + Hash + Eq,
         {
             self.map.remove(k)
         }
         #[inline]
         pub fn retain<F>(&mut self, f: F)
-        where
-            F: FnMut(&K, &mut V) -> bool,
+            where
+                F: FnMut(&K, &mut V) -> bool,
         {
             self.map.retain(f)
         }
@@ -270,8 +270,8 @@ mod hashmap {
 
     impl<K: Eq + Hash, V: Default + Clone> FromIterator<(K, V)> for DefaultHashMap<K, V> {
         fn from_iter<I>(iter: I) -> Self
-        where
-            I: IntoIterator<Item = (K, V)>,
+            where
+                I: IntoIterator<Item=(K, V)>,
         {
             Self {
                 map: HashMap::from_iter(iter),
@@ -280,6 +280,97 @@ mod hashmap {
         }
     }
 
+    #[cfg(feature = "with-serde")]
+    mod serdefeature {
+        use super::*;
+        use std::{fmt, marker::PhantomData};
+        use serde::{ser::{Serializer, Serialize, SerializeMap}, de::{Deserialize, Deserializer, Visitor, MapAccess}};
+
+        impl<K, V> Serialize for DefaultHashMap<K, V>
+            where
+                K: Serialize + Eq + Hash,
+                V: Serialize + Clone,
+        {
+            fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+                where
+                    S: Serializer,
+            {
+                let mut map = serializer.serialize_map(Some(self.len()))?;
+                for (k, v) in self.iter() {
+                    map.serialize_entry(k, v)?;
+                }
+                map.end()
+            }
+        }
+
+        struct DefaultMapVisitor<K, V>
+            where
+                K: Eq + Hash,
+                V: Clone + Default,
+        {
+            marker: PhantomData<fn() -> DefaultHashMap<K, V>>
+        }
+
+        impl<K, V> DefaultMapVisitor<K, V>
+            where
+                K: Eq + Hash,
+                V: Clone + Default,
+        {
+            fn new() -> Self {
+                DefaultMapVisitor {
+                    marker: PhantomData
+                }
+            }
+        }
+
+        impl<'de, K, V> Visitor<'de> for DefaultMapVisitor<K, V>
+            where
+                K: Deserialize<'de> + Eq + Hash,
+                V: Deserialize<'de> + Clone + Default,
+        {
+            // The type that our Visitor is going to produce.
+            type Value = DefaultHashMap<K, V>;
+
+            // Format a message stating what data this Visitor expects to receive.
+            fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+                formatter.write_str("DefaultHashMap requires K + Eq + Hash, V + Clone + Default")
+            }
+
+            // Deserialize MyMap from an abstract "map" provided by the
+            // Deserializer. The MapAccess input is a callback provided by
+            // the Deserializer to let us see each entry in the map.
+            fn visit_map<M>(self, mut access: M) -> Result<Self::Value, M::Error>
+                where
+                    M: MapAccess<'de>,
+            {
+                let mut map = DefaultHashMap::new(V::default());
+
+                // While there are entries remaining in the input, add them
+                // into our map.
+                while let Some((key, value)) = access.next_entry()? {
+                    map.insert(key, value);
+                }
+
+                Ok(map)
+            }
+        }
+
+        // This is the trait that informs Serde how to deserialize MyMap.
+        impl<'de, K, V> Deserialize<'de> for DefaultHashMap<K, V>
+            where
+                K: Deserialize<'de> + Hash + Eq,
+                V: Deserialize<'de> + Clone + Default,
+        {
+            fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+                where
+                    D: Deserializer<'de>,
+            {
+                // Instantiate our Visitor and ask the Deserializer to drive
+                // it over the input data, resulting in an instance of MyMap.
+                deserializer.deserialize_map(DefaultMapVisitor::new())
+            }
+        }
+    }
 }
 
 /// The `defaulthashmap!` macro can be used to easily initialize a `DefaultHashMap` in the
@@ -468,4 +559,16 @@ mod tests {
         assert_eq!(expected, default.into());
     }
 
+    #[cfg(feature = "with-serde")]
+    mod serde_tests {
+        use super::*;
+
+        #[test]
+        fn serialize_and_back() {
+            let h1: DefaultHashMap<i32, u64> = defaulthashmap!(1 => 10, 2 => 20, 3 => 30);
+            let s = serde_json::to_string(&h1).unwrap();
+            let h2: DefaultHashMap<i32, u64> = serde_json::from_str(&s).unwrap();
+            assert_eq!(h2, h2);
+        }
+    }
 }
