@@ -12,9 +12,7 @@
 //!
 
 //! ```rust
-//! # #[macro_use] extern crate defaultmap;
 //! # use defaultmap::*;
-//! # fn main() {
 //!
 //! let nums = [1, 4, 3, 3, 4, 2, 4];
 //! let mut counts: DefaultHashMap<i32, i32> = defaulthashmap!();
@@ -31,7 +29,6 @@
 //! # assert_eq!(1, counts[2]);
 //! # assert_eq!(2, counts[3]);
 //! # assert_eq!(3, counts[4]);
-//! # }
 //!
 //! ```
 //!
@@ -44,9 +41,7 @@
 //! map that contains the list of synonyms for each word.
 //!
 //! ```rust
-//! # #[macro_use] extern crate defaultmap;
 //! # use defaultmap::*;
-//! # fn main() {
 //!
 //! let synonym_tuples = [
 //!     ("nice", "sweet"),
@@ -68,7 +63,6 @@
 //! assert_eq!(synonym_map["nice"], vec!["sweet", "entertaining", "good"]);
 //! assert_eq!(synonym_map["evil"], Vec::<&str>::new());
 //!
-//! # }
 //! ```
 //!
 
@@ -245,7 +239,7 @@ mod hashmap {
             self.map.insert(k, v)
         }
         #[inline]
-        pub fn contains_key<Q>(&self, k: &Q) -> (bool)
+        pub fn contains_key<Q>(&self, k: &Q) -> bool
         where
             K: Borrow<Q>,
             Q: ?Sized + Hash + Eq,
@@ -253,7 +247,7 @@ mod hashmap {
             self.map.contains_key(k)
         }
         #[inline]
-        pub fn remove<Q>(&mut self, k: &Q) -> (Option<V>)
+        pub fn remove<Q>(&mut self, k: &Q) -> Option<V>
         where
             K: Borrow<Q>,
             Q: ?Sized + Hash + Eq,
@@ -437,7 +431,6 @@ mod tests {
         assert_eq!(synonym_map["good"], vec!["nice"]);
         assert_eq!(synonym_map["nice"], vec!["sweet", "entertaining", "good"]);
         assert_eq!(synonym_map["evil"], Vec::<&str>::new());
-        // assert!(false)
     }
 
     #[derive(Clone)]
@@ -473,11 +466,20 @@ mod tests {
         use super::*;
 
         #[test]
+        fn deserialize_static() {
+            let s = "{ \"map\" : { \"foo\": 3, \"bar\": 5 }, \"default\":15 }";
+            let h: Result<DefaultHashMap<&str, i32>, _> = serde_json::from_str(&s);
+            let h = h.unwrap();
+            assert_eq!(h["foo"] * h["bar"], h["foobar"])
+        }
+
+        #[test]
         fn serialize_and_back() {
             let h1: DefaultHashMap<i32, u64> = defaulthashmap!(1 => 10, 2 => 20, 3 => 30);
             let s = serde_json::to_string(&h1).unwrap();
             let h2: DefaultHashMap<i32, u64> = serde_json::from_str(&s).unwrap();
             assert_eq!(h2, h2);
+            assert_eq!(h2[3], 30);
         }
 
         #[test]
@@ -486,6 +488,16 @@ mod tests {
             let s = serde_json::to_string(&h1).unwrap();
             let h2: DefaultHashMap<&str, u64> = serde_json::from_str(&s).unwrap();
             assert_eq!(h2["answer"], 42);
+        }
+
+        #[test]
+        fn std_hashmap() {
+            let h1: DefaultHashMap<i32, i32> = defaulthashmap!(1=> 10, 2=> 20);
+            let stdhm: std::collections::HashMap<i32, i32> = h1.clone().into();
+            let s = serde_json::to_string(&stdhm).unwrap();
+            let h2: DefaultHashMap<i32, i32> =
+                DefaultHashMap::new_with_map(i32::default(), serde_json::from_str(&s).unwrap());
+            assert_eq!(h1, h2);
         }
     }
 }
