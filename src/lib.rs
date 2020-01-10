@@ -467,7 +467,13 @@ mod tests {
 
         #[test]
         fn deserialize_static() {
-            let s = "{ \"map\" : { \"foo\": 3, \"bar\": 5 }, \"default\":15 }";
+            let s = "{ 
+                        \"map\" : 
+                            {   \"foo\": 3, 
+                                \"bar\": 5 
+                            }, 
+                        \"default\":15 
+                    }";
             let h: Result<DefaultHashMap<&str, i32>, _> = serde_json::from_str(&s);
             let h = h.unwrap();
             assert_eq!(h["foo"] * h["bar"], h["foobar"])
