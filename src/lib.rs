@@ -12,7 +12,6 @@
 //!
 
 //! ```rust
-//! # #[macro_use] extern crate defaultmap;
 //! # use defaultmap::*;
 //!
 //! let nums = [1, 4, 3, 3, 4, 2, 4];
@@ -42,7 +41,6 @@
 //! map that contains the list of synonyms for each word.
 //!
 //! ```rust
-//! # #[macro_use] extern crate defaultmap;
 //! # use defaultmap::*;
 //!
 //! let synonym_tuples = [
@@ -79,6 +77,7 @@ mod hashmap {
 
     /// A `HashMap` that returns a default when keys are accessed that are not present.
     #[derive(PartialEq, Eq, Clone, Debug)]
+    #[cfg_attr(feature = "with-serde", derive(serde::Serialize, serde::Deserialize))]
     pub struct DefaultHashMap<K: Eq + Hash, V: Clone> {
         map: HashMap<K, V>,
         default: V,
@@ -120,7 +119,7 @@ mod hashmap {
     }
 
     impl<K: Eq + Hash, V: Clone> DefaultHashMap<K, V> {
-        /// Creates an empty `DefaultHashmap` with `default` as the default for missing keys.
+        /// Creates an empty `DefaultHashMap` with `default` as the default for missing keys.
         /// When the provided `default` is equivalent to `V::default()` it is preferred to use
         /// `DefaultHashMap::default()` instead.
         pub fn new(default: V) -> DefaultHashMap<K, V> {
@@ -274,7 +273,6 @@ mod hashmap {
             }
         }
     }
-
 }
 
 /// The `defaulthashmap!` macro can be used to easily initialize a `DefaultHashMap` in the
@@ -430,7 +428,6 @@ mod tests {
         assert_eq!(synonym_map["good"], vec!["nice"]);
         assert_eq!(synonym_map["nice"], vec!["sweet", "entertaining", "good"]);
         assert_eq!(synonym_map["evil"], Vec::<&str>::new());
-        // assert!(false)
     }
 
     #[derive(Clone)]
@@ -461,4 +458,49 @@ mod tests {
         assert_eq!(expected, default.into());
     }
 
+    #[cfg(feature = "with-serde")]
+    mod serde_tests {
+        use super::*;
+
+        #[test]
+        fn deserialize_static() {
+            let s = "{ 
+                        \"map\" : 
+                            {   \"foo\": 3, 
+                                \"bar\": 5 
+                            }, 
+                        \"default\":15 
+                    }";
+            let h: Result<DefaultHashMap<&str, i32>, _> = serde_json::from_str(&s);
+            let h = h.unwrap();
+            assert_eq!(h["foo"] * h["bar"], h["foobar"])
+        }
+
+        #[test]
+        fn serialize_and_back() {
+            let h1: DefaultHashMap<i32, u64> = defaulthashmap!(1 => 10, 2 => 20, 3 => 30);
+            let s = serde_json::to_string(&h1).unwrap();
+            let h2: DefaultHashMap<i32, u64> = serde_json::from_str(&s).unwrap();
+            assert_eq!(h2, h2);
+            assert_eq!(h2[3], 30);
+        }
+
+        #[test]
+        fn serialize_default() {
+            let h1: DefaultHashMap<&str, u64> = DefaultHashMap::new(42);
+            let s = serde_json::to_string(&h1).unwrap();
+            let h2: DefaultHashMap<&str, u64> = serde_json::from_str(&s).unwrap();
+            assert_eq!(h2["answer"], 42);
+        }
+
+        #[test]
+        fn std_hashmap() {
+            let h1: DefaultHashMap<i32, i32> = defaulthashmap!(1=> 10, 2=> 20);
+            let stdhm: std::collections::HashMap<i32, i32> = h1.clone().into();
+            let s = serde_json::to_string(&stdhm).unwrap();
+            let h2: DefaultHashMap<i32, i32> =
+                DefaultHashMap::new_with_map(i32::default(), serde_json::from_str(&s).unwrap());
+            assert_eq!(h1, h2);
+        }
+    }
 }
