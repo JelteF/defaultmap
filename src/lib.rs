@@ -84,6 +84,7 @@ mod hashmap {
 
     /// A `HashMap` that returns a default when keys are accessed that are not present.
     #[derive(PartialEq, Eq, Clone, Debug)]
+    #[cfg_attr(feature = "with-serde", derive(serde::Serialize, serde::Deserialize))]
     pub struct DefaultHashMap<K: Eq + Hash, V: Clone> {
         map: HashMap<K, V>,
         default: V,
@@ -279,7 +280,6 @@ mod hashmap {
             }
         }
     }
-
 }
 
 /// The `defaulthashmap!` macro can be used to easily initialize a `DefaultHashMap` in the
@@ -468,4 +468,24 @@ mod tests {
         assert_eq!(expected, default.into());
     }
 
+    #[cfg(feature = "with-serde")]
+    mod serde_tests {
+        use super::*;
+
+        #[test]
+        fn serialize_and_back() {
+            let h1: DefaultHashMap<i32, u64> = defaulthashmap!(1 => 10, 2 => 20, 3 => 30);
+            let s = serde_json::to_string(&h1).unwrap();
+            let h2: DefaultHashMap<i32, u64> = serde_json::from_str(&s).unwrap();
+            assert_eq!(h2, h2);
+        }
+
+        #[test]
+        fn serialize_default() {
+            let h1: DefaultHashMap<&str, u64> = DefaultHashMap::new(42);
+            let s = serde_json::to_string(&h1).unwrap();
+            let h2: DefaultHashMap<&str, u64> = serde_json::from_str(&s).unwrap();
+            assert_eq!(h2["answer"], 42);
+        }
+    }
 }

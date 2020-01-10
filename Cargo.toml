@@ -7,6 +7,7 @@ license = "MIT"
 repository = "https://github.com/JelteF/defaultmap"
 documentation = "https://docs.rs/defaultmap"
 readme = "README.md"
+edition = "2018"
 
 keywords = ["dict", "defaultdict", "defaulthashmap", "hashmap", "default"]
 
@@ -19,7 +20,16 @@ include = [
     "README.md",
 ]
 
-
 [badges]
 travis-ci = { repository = "JelteF/defaultmap" }
 appveyor = { repository = "JelteF/defaultmap" }
+
+[features]
+default = []
+with-serde = ["serde"]
+
+[dependencies]
+serde = { version = "1.0.0", features = ["derive"], optional = true}
+
+[dev-dependencies]
+serde_json = "1.0"
