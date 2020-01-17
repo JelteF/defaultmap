@@ -120,7 +120,7 @@ mod hashmap {
     }
 
     impl<K: Eq + Hash, V: Clone> DefaultHashMap<K, V> {
-        /// Creates an empty `DefaultHashmap` with `default` as the default for missing keys.
+        /// Creates an empty `DefaultHashMap` with `default` as the default for missing keys.
         /// When the provided `default` is equivalent to `V::default()` it is preferred to use
         /// `DefaultHashMap::default()` instead.
         pub fn new(default: V) -> DefaultHashMap<K, V> {
