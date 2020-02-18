@@ -14,7 +14,6 @@
 //! ```rust
 //! # #[macro_use] extern crate defaultmap;
 //! # use defaultmap::*;
-//! # fn main() {
 //!
 //! let nums = [1, 4, 3, 3, 4, 2, 4];
 //! let mut counts: DefaultHashMap<i32, i32> = defaulthashmap!();
@@ -31,7 +30,6 @@
 //! # assert_eq!(1, counts[2]);
 //! # assert_eq!(2, counts[3]);
 //! # assert_eq!(3, counts[4]);
-//! # }
 //!
 //! ```
 //!
@@ -46,7 +44,6 @@
 //! ```rust
 //! # #[macro_use] extern crate defaultmap;
 //! # use defaultmap::*;
-//! # fn main() {
 //!
 //! let synonym_tuples = [
 //!     ("nice", "sweet"),
@@ -67,8 +64,6 @@
 //! assert_eq!(synonym_map["good"], vec!["nice"]);
 //! assert_eq!(synonym_map["nice"], vec!["sweet", "entertaining", "good"]);
 //! assert_eq!(synonym_map["evil"], Vec::<&str>::new());
-//!
-//! # }
 //! ```
 //!
 
@@ -244,7 +239,7 @@ mod hashmap {
             self.map.insert(k, v)
         }
         #[inline]
-        pub fn contains_key<Q>(&self, k: &Q) -> (bool)
+        pub fn contains_key<Q>(&self, k: &Q) -> bool
         where
             K: Borrow<Q>,
             Q: ?Sized + Hash + Eq,
@@ -252,7 +247,7 @@ mod hashmap {
             self.map.contains_key(k)
         }
         #[inline]
-        pub fn remove<Q>(&mut self, k: &Q) -> (Option<V>)
+        pub fn remove<Q>(&mut self, k: &Q) -> Option<V>
         where
             K: Borrow<Q>,
             Q: ?Sized + Hash + Eq,
@@ -288,7 +283,6 @@ mod hashmap {
 /// ```
 /// # #[macro_use] extern crate defaultmap;
 /// # use defaultmap::*;
-/// # fn main() {
 /// // An empty map with the default as default
 /// let _: DefaultHashMap<i32, i32> = defaulthashmap!{};
 ///
@@ -309,8 +303,7 @@ mod hashmap {
 ///     5 => 20,
 ///     6 => 30,
 /// };
-///
-/// # }
+/// ```
 #[macro_export]
 macro_rules! defaulthashmap {
     (@single $($x:tt)*) => (());
