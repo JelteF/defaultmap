@@ -65,7 +65,10 @@
 //! ```
 //!
 
+mod btreemap;
+
 pub use hashmap::DefaultHashMap;
+pub use btreemap::DefaultBTreeMap;
 
 mod hashmap {
     use std::borrow::Borrow;
@@ -136,11 +139,16 @@ mod hashmap {
             DefaultHashMap { map, default }
         }
 
-        /// Returns a reference to the value stored for the provided key.
-        /// If the key is not in the `DefaultHashMap` a reference to the default value is returned.
-        /// Usually the `map[key]` method of retrieving keys is prefered over using `get` directly.
-        /// This method accepts both references and owned values as the key.
-        pub fn get<Q, QB: Borrow<Q>>(&self, key: QB) -> &V
+    /// Changes the default value permanently or until `set_default()` is called again.
+    pub fn set_default(&mut self, new_default: V) {
+        self.default = new_default;
+    }
+
+    /// Returns a reference to the value stored for the provided key.
+    /// If the key is not in the `DefaultHashMap` a reference to the default value is returned.
+    /// Usually the `map[key]` method of retrieving keys is preferred over using `get` directly.
+    /// This method accepts both references and owned values as the key.
+    pub fn get<Q, QB: Borrow<Q>>(&self, key: QB) -> &V
         where
             K: Borrow<Q>,
             Q: ?Sized + Hash + Eq,
@@ -405,6 +413,23 @@ mod tests {
         assert_eq!(2, counts[3]);
         assert_eq!(3, counts[4]);
         assert_eq!(0, counts[5]);
+    }
+
+
+    #[test]
+    fn change_default() {
+        let mut numbers: DefaultHashMap<i32, String> = DefaultHashMap::new("Mexico".to_string());
+
+        assert_eq!("Mexico", numbers.get_mut(1));
+        assert_eq!("Mexico", numbers.get_mut(2));
+        assert_eq!("Mexico", numbers[3]);
+
+        numbers.set_default("Cybernetics".to_string());
+        assert_eq!("Mexico", numbers[1]);
+        assert_eq!("Mexico", numbers[2]);
+        assert_eq!("Cybernetics", numbers[3]);
+        assert_eq!("Cybernetics", numbers[4]);
+        assert_eq!("Cybernetics", numbers[5]);
     }
 
     #[test]
