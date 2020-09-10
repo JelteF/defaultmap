@@ -75,7 +75,7 @@ impl<K: Eq + Hash + Ord, V: Clone> DefaultBTreeMap<K, V> {
     /// Usually the `map[key]` method of retrieving keys is prefered over using `get` directly.
     /// This method accepts both references and owned values as the key.
     pub fn get<Q, QB: Borrow<Q>>(&self, key: QB) -> &V
-        where
+    where
         K: Borrow<Q>,
         Q: ?Sized + Hash + Eq + Ord,
     {
@@ -116,7 +116,6 @@ impl<K: Eq + Hash + Ord, V: Clone> IndexMut<K> for DefaultBTreeMap<K, V> {
 /// [documentation](https://doc.rust-lang.org/std/collections/struct.BTreeMap.html) for
 /// the usage of these methods.
 impl<K: Eq + Hash + Ord, V: Clone> DefaultBTreeMap<K, V> {
-
     #[inline]
     pub fn keys(&self) -> Keys<K, V> {
         self.map.keys()
@@ -159,7 +158,7 @@ impl<K: Eq + Hash + Ord, V: Clone> DefaultBTreeMap<K, V> {
     }
     #[inline]
     pub fn contains_key<Q>(&self, k: &Q) -> bool
-        where
+    where
         K: Borrow<Q>,
         Q: ?Sized + Hash + Eq + Ord,
     {
@@ -167,7 +166,7 @@ impl<K: Eq + Hash + Ord, V: Clone> DefaultBTreeMap<K, V> {
     }
     #[inline]
     pub fn remove<Q>(&mut self, k: &Q) -> Option<V>
-        where
+    where
         K: Borrow<Q>,
         Q: ?Sized + Hash + Eq + Ord,
     {
@@ -177,7 +176,7 @@ impl<K: Eq + Hash + Ord, V: Clone> DefaultBTreeMap<K, V> {
 
 impl<K: Eq + Hash + Ord, V: Default + Clone> FromIterator<(K, V)> for DefaultBTreeMap<K, V> {
     fn from_iter<I>(iter: I) -> Self
-        where
+    where
         I: IntoIterator<Item = (K, V)>,
     {
         Self {
@@ -186,7 +185,6 @@ impl<K: Eq + Hash + Ord, V: Default + Clone> FromIterator<(K, V)> for DefaultBTr
         }
     }
 }
-
 
 /// The `defaultbtreemap!` macro can be used to easily initialize a `DefaultBTreeMap` in the
 /// following ways:
@@ -318,7 +316,6 @@ mod tests {
         assert_eq!(3, counts[4]);
         assert_eq!(0, counts[5]);
     }
-
 
     #[test]
     fn change_default() {

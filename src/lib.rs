@@ -68,5 +68,5 @@
 mod btreemap;
 mod hashmap;
 
-pub use hashmap::DefaultHashMap;
 pub use btreemap::DefaultBTreeMap;
+pub use hashmap::DefaultHashMap;
