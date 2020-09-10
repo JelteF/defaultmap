@@ -1,6 +1,6 @@
 [package]
 name = "defaultmap"
-version = "0.5.0"
+version = "0.5.1-alpha.0"
 description = "Provides a HashMap with an automatic default for missing keys."
 authors = ["Jelte Fennema <github-tech@jeltef.nl>"]
 license = "MIT"
