@@ -113,6 +113,44 @@ impl<K: Eq + Hash, V: Clone> IndexMut<K> for DefaultHashMap<K, V> {
     }
 }
 
+impl<K: Eq + Hash + Ord, V: Clone> DefaultHashMap<K, V> {
+    fn keys_sorted(&self) -> Vec<&K> {
+        let mut keys: Vec<_> = self.keys().collect();
+        keys.sort_unstable();
+        keys
+    }
+
+    fn sorted_by_key(&self) -> impl Iterator<Item = (&K, &V)> {
+        self.keys_sorted().into_iter().map(move |x| (x, &self[x]))
+    }
+}
+
+#[allow(clippy::derive_hash_xor_eq)]
+impl<K: Ord + Hash, V: Hash + Clone + Eq> Hash for DefaultHashMap<K, V> {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        for (_, val) in self.sorted_by_key() {
+            if val != &self.default {
+                val.hash(state);
+            }
+        }
+    }
+}
+
+impl<K: Ord + Hash, V: Hash + Clone + Eq + Ord> PartialOrd for DefaultHashMap<K, V> {
+    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        Some(
+            self.sorted_by_key()
+                .map(|x| x.1)
+                .cmp(other.sorted_by_key().map(|x| x.1)),
+        )
+    }
+}
+impl<K: Ord + Hash, V: Hash + Clone + Eq + Ord> Ord for DefaultHashMap<K, V> {
+    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
+        self.partial_cmp(other).unwrap()
+    }
+}
+
 /// These methods simply forward to the underlying `HashMap`, see that
 /// [documentation](https://doc.rust-lang.org/std/collections/struct.HashMap.html) for
 /// the usage of these methods.
@@ -272,7 +310,10 @@ macro_rules! defaulthashmap {
 #[cfg(test)]
 mod tests {
     use super::DefaultHashMap;
-    use std::collections::HashMap;
+    use std::{
+        collections::{hash_map::DefaultHasher, HashMap},
+        hash::{Hash, Hasher},
+    };
 
     #[test]
     fn macro_test() {
@@ -406,6 +447,49 @@ mod tests {
         assert_eq!(default[4], 0);
         let expected: HashMap<i32, i32> = vec![(0, 1), (2, 3), (4, 0)].into_iter().collect();
         assert_eq!(expected, default.into());
+    }
+
+    #[test]
+    fn hash() {
+        let a: DefaultHashMap<_, _> = defaulthashmap! {
+            5,
+            1 => 1,
+            2 => 1,
+            3 => 2,
+        };
+        let b: DefaultHashMap<_, _> = defaulthashmap! {
+            5,
+            2 => 1,
+            1 => 1,
+            3 => 2,
+        };
+        assert_eq!(a, b);
+
+        fn hash(x: &impl Hash) -> u64 {
+            let mut hasher = DefaultHasher::new();
+            x.hash(&mut hasher);
+            hasher.finish()
+        }
+
+        assert_eq!(hash(&a), hash(&b))
+    }
+
+    #[test]
+    fn ord() {
+        let a: DefaultHashMap<_, _> = defaulthashmap! {
+            5,
+            1 => 1,
+            2 => 1,
+            3 => 2,
+        };
+        let b: DefaultHashMap<_, _> = defaulthashmap! {
+            5,
+            2 => 1,
+            1 => 2,
+            3 => 2,
+        };
+
+        assert!(a < b);
     }
 
     #[cfg(feature = "with-serde")]
