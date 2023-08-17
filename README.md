@@ -1,6 +1,6 @@
 # defaultmap
 
-[![Build Status](https://api.travis-ci.org/JelteF/defaultmap.svg?branch=master)](https://travis-ci.org/JelteF/defaultmap)
+[![Build Status](https://github.com/JelteF/defaultmap/workflows/CI/badge.svg)](https://github.com/JelteF/defaultmap/actions)
 [![codecov](https://codecov.io/gh/JelteF/defaultmap/branch/master/graph/badge.svg)](https://codecov.io/gh/JelteF/defaultmap)
 [![Latest Version](https://img.shields.io/crates/v/defaultmap.svg)](https://crates.io/crates/defaultmap)
 [![Rust Documentation](https://img.shields.io/badge/api-rustdoc-blue.svg)](https://docs.rs/defaultmap/)
