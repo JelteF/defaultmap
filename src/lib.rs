@@ -63,7 +63,9 @@
 //! assert_eq!(synonym_map["nice"], vec!["sweet", "entertaining", "good"]);
 //! assert_eq!(synonym_map["evil"], Vec::<&str>::new());
 //! ```
-//!
+
+#![cfg_attr(docsrs, feature(doc_auto_cfg))]
+#![cfg_attr(any(not(docsrs), ci), deny(rustdoc::all))]
 
 mod default_fn;
 

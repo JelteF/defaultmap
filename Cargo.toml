@@ -26,7 +26,7 @@ appveyor = { repository = "JelteF/defaultmap" }
 
 [features]
 default = []
-with-serde = ["serde"]
+with-serde = ["dep:serde"]
 
 [dependencies]
 derive_more = { version = "=1.0.0-beta.3", features = ["debug"] }
