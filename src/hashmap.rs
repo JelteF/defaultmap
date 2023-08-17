@@ -6,6 +6,8 @@ use std::hash::Hash;
 use std::iter::{FromIterator, IntoIterator};
 use std::ops::{Index, IndexMut};
 
+use crate::DefaultFn;
+
 /// A `HashMap` that returns a default when keys are accessed that are not present.
 #[derive(Clone, Debug)]
 #[cfg_attr(feature = "with-serde", derive(serde::Serialize, serde::Deserialize))]
@@ -14,7 +16,7 @@ pub struct DefaultHashMap<K: Eq + Hash, V> {
     default: V,
     #[debug(skip)]
     #[cfg_attr(feature = "with-serde", serde(skip))]
-    default_fn: Box<dyn crate::DefaultFn<V>>,
+    default_fn: Box<dyn DefaultFn<V>>,
 }
 
 impl<K: Eq + Hash, V: PartialEq> PartialEq for DefaultHashMap<K, V> {
@@ -108,6 +110,31 @@ impl<K: Eq + Hash, V> DefaultHashMap<K, V> {
     /// Returns the an owned version of the default value
     pub fn get_default(&self) -> V {
         self.default_fn.call()
+    }
+
+    /// Creates an empty `DefaultHashMap` with `default_fn` as the default value generation
+    /// function for missing keys. When the provided `default_fn` only calls clone on a value,
+    /// using `DefaultHashMap::new` is preferred.
+    pub fn from_fn(default_fn: impl DefaultFn<V> + 'static) -> DefaultHashMap<K, V> {
+        DefaultHashMap {
+            map: HashMap::new(),
+            default: default_fn.call(),
+            default_fn: Box::new(default_fn),
+        }
+    }
+
+    /// Creates a `DefaultHashMap` based on an existing map and using `default_fn` as the default
+    /// value generation function for missing keys. When the provided `default_fn` is equivalent to
+    /// V::default(), then using `DefaultHashMap::from(map)` is preferred.
+    pub fn from_map_and_fn(
+        map: HashMap<K, V>,
+        default_fn: impl DefaultFn<V> + 'static,
+    ) -> DefaultHashMap<K, V> {
+        DefaultHashMap {
+            map,
+            default: default_fn.call(),
+            default_fn: Box::new(default_fn),
+        }
     }
 }
 
@@ -439,6 +466,27 @@ mod tests {
         assert_eq!(default[4], 0);
         let expected: HashMap<i32, i32> = vec![(0, 1), (2, 3), (4, 0)].into_iter().collect();
         assert_eq!(expected, default.into());
+    }
+
+    #[test]
+    fn from_fn() {
+        let i: i32 = 20;
+        let mut map = DefaultHashMap::from_fn(move || i);
+        map[0] += 1;
+        assert_eq!(21, map[0]);
+        assert_eq!(20, map[1]);
+
+    }
+
+    #[test]
+    fn from_map_and_fn() {
+        let i: i32 = 20;
+        let normal: HashMap<i32, i32> = vec![(0, 1), (2, 3)].into_iter().collect();
+        let mut map = DefaultHashMap::from_map_and_fn(normal, move || i);
+        map[0] += 1;
+        assert_eq!(map[0], 2);
+        assert_eq!(map[1], 20);
+        assert_eq!(map[2], 3);
     }
 
     #[cfg(feature = "with-serde")]

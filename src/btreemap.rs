@@ -5,6 +5,8 @@ use std::collections::BTreeMap;
 use std::iter::{FromIterator, IntoIterator};
 use std::ops::{Index, IndexMut};
 
+use crate::DefaultFn;
+
 /// A `BTreeMap` that returns a default when keys are accessed that are not present.
 #[derive(Clone, Debug)]
 #[cfg_attr(feature = "with-serde", derive(serde::Serialize, serde::Deserialize))]
@@ -13,7 +15,7 @@ pub struct DefaultBTreeMap<K: Eq + Ord, V> {
     default: V,
     #[debug(skip)]
     #[cfg_attr(feature = "with-serde", serde(skip))]
-    default_fn: Box<dyn crate::DefaultFn<V>>,
+    default_fn: Box<dyn DefaultFn<V>>,
 }
 
 impl<K: Eq + Ord, V: PartialEq> PartialEq for DefaultBTreeMap<K, V> {
@@ -107,6 +109,31 @@ impl<K: Eq + Ord, V> DefaultBTreeMap<K, V> {
     /// Returns the an owned version of the default value
     pub fn get_default(&self) -> V {
         self.default_fn.call()
+    }
+
+    /// Creates an empty `DefaultBTreeMap` with `default_fn` as the default value generation
+    /// function for missing keys. When the provided `default_fn` only calls clone on a value,
+    /// using `DefaultBTreeMap::new` is preferred.
+    pub fn from_fn(default_fn: impl DefaultFn<V> + 'static) -> DefaultBTreeMap<K, V> {
+        DefaultBTreeMap {
+            map: BTreeMap::new(),
+            default: default_fn.call(),
+            default_fn: Box::new(default_fn),
+        }
+    }
+
+    /// Creates a `DefaultBTreeMap` based on an existing map and using `default_fn` as the default
+    /// value generation function for missing keys. When the provided `default_fn` is equivalent to
+    /// V::default(), then using `DefaultBTreeMap::from(map)` is preferred.
+    pub fn from_map_and_fn(
+        map: BTreeMap<K, V>,
+        default_fn: impl DefaultFn<V> + 'static,
+    ) -> DefaultBTreeMap<K, V> {
+        DefaultBTreeMap {
+            map,
+            default: default_fn.call(),
+            default_fn: Box::new(default_fn),
+        }
     }
 }
 
@@ -422,6 +449,27 @@ mod tests {
         assert_eq!(default[4], 0);
         let expected: BTreeMap<i32, i32> = vec![(0, 1), (2, 3), (4, 0)].into_iter().collect();
         assert_eq!(expected, default.into());
+    }
+
+    #[test]
+    fn from_fn() {
+        let i: i32 = 20;
+        let mut map = DefaultBTreeMap::from_fn(move || i);
+        map[0] += 1;
+        assert_eq!(21, map[0]);
+        assert_eq!(20, map[1]);
+
+    }
+
+    #[test]
+    fn from_map_and_fn() {
+        let i: i32 = 20;
+        let normal: BTreeMap<i32, i32> = vec![(0, 1), (2, 3)].into_iter().collect();
+        let mut map = DefaultBTreeMap::from_map_and_fn(normal, move || i);
+        map[0] += 1;
+        assert_eq!(map[0], 2);
+        assert_eq!(map[1], 20);
+        assert_eq!(map[2], 3);
     }
 
     #[cfg(feature = "with-serde")]
