@@ -24,6 +24,10 @@ include = [
 travis-ci = { repository = "JelteF/defaultmap" }
 appveyor = { repository = "JelteF/defaultmap" }
 
+[package.metadata.docs.rs]
+features = ["with-serde"]
+rustdoc-args = ["--cfg", "docsrs"]
+
 [features]
 default = []
 with-serde = ["dep:serde"]
