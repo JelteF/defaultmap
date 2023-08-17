@@ -1,3 +1,4 @@
+use derive_more::Debug;
 use std::borrow::Borrow;
 use std::collections::hash_map::*;
 use std::collections::HashMap;
@@ -6,12 +7,23 @@ use std::iter::{FromIterator, IntoIterator};
 use std::ops::{Index, IndexMut};
 
 /// A `HashMap` that returns a default when keys are accessed that are not present.
-#[derive(PartialEq, Eq, Clone, Debug)]
+#[derive(Clone, Debug)]
 #[cfg_attr(feature = "with-serde", derive(serde::Serialize, serde::Deserialize))]
-pub struct DefaultHashMap<K: Eq + Hash, V: Clone> {
+pub struct DefaultHashMap<K: Eq + Hash, V> {
     map: HashMap<K, V>,
     default: V,
+    #[debug(skip)]
+    #[cfg_attr(feature = "with-serde", serde(skip))]
+    default_fn: Box<dyn crate::DefaultFn<V>>,
 }
+
+impl<K: Eq + Hash, V: PartialEq> PartialEq for DefaultHashMap<K, V> {
+    fn eq(&self, other: &Self) -> bool {
+        self.map == other.map && self.default == other.default
+    }
+}
+
+impl<K: Eq + Hash, V: Eq> Eq for DefaultHashMap<K, V> {}
 
 impl<K: Eq + Hash, V: Default + Clone> Default for DefaultHashMap<K, V> {
     /// The `default()` constructor creates an empty DefaultHashMap with the default of `V`
@@ -21,12 +33,13 @@ impl<K: Eq + Hash, V: Default + Clone> Default for DefaultHashMap<K, V> {
     fn default() -> DefaultHashMap<K, V> {
         DefaultHashMap {
             map: HashMap::default(),
+            default_fn: Box::new(|| V::default()),
             default: V::default(),
         }
     }
 }
 
-impl<K: Eq + Hash, V: Default + Clone> From<HashMap<K, V>> for DefaultHashMap<K, V> {
+impl<K: Eq + Hash, V: Default> From<HashMap<K, V>> for DefaultHashMap<K, V> {
     /// If you already have a `HashMap` that you would like to convert to a
     /// `DefaultHashMap` you can use the `into()` method on the `HashMap` or the
     /// `from()` constructor of `DefaultHashMap`.
@@ -35,12 +48,13 @@ impl<K: Eq + Hash, V: Default + Clone> From<HashMap<K, V>> for DefaultHashMap<K,
     fn from(map: HashMap<K, V>) -> DefaultHashMap<K, V> {
         DefaultHashMap {
             map,
+            default_fn: Box::new(|| V::default()),
             default: V::default(),
         }
     }
 }
 
-impl<K: Eq + Hash, V: Clone> Into<HashMap<K, V>> for DefaultHashMap<K, V> {
+impl<K: Eq + Hash, V> Into<HashMap<K, V>> for DefaultHashMap<K, V> {
     /// The into method can be used to convert a `DefaultHashMap` back into a
     /// `HashMap`.
     fn into(self) -> HashMap<K, V> {
@@ -48,14 +62,15 @@ impl<K: Eq + Hash, V: Clone> Into<HashMap<K, V>> for DefaultHashMap<K, V> {
     }
 }
 
-impl<K: Eq + Hash, V: Clone> DefaultHashMap<K, V> {
+impl<K: Eq + Hash, V: Clone + 'static> DefaultHashMap<K, V> {
     /// Creates an empty `DefaultHashMap` with `default` as the default for missing keys.
     /// When the provided `default` is equivalent to `V::default()` it is preferred to use
     /// `DefaultHashMap::default()` instead.
     pub fn new(default: V) -> DefaultHashMap<K, V> {
         DefaultHashMap {
             map: HashMap::new(),
-            default,
+            default: default.clone(),
+            default_fn: Box::new(move || default.clone()),
         }
     }
 
@@ -63,9 +78,15 @@ impl<K: Eq + Hash, V: Clone> DefaultHashMap<K, V> {
     /// If `V::default()` is the supplied default, usage of the `from()` constructor or the
     /// `into()` method on the original `HashMap` is preferred.
     pub fn new_with_map(default: V, map: HashMap<K, V>) -> DefaultHashMap<K, V> {
-        DefaultHashMap { map, default }
+        DefaultHashMap {
+            map,
+            default: default.clone(),
+            default_fn: Box::new(move || default.clone()),
+        }
     }
+}
 
+impl<K: Eq + Hash, V> DefaultHashMap<K, V> {
     /// Changes the default value permanently or until `set_default()` is called again.
     pub fn set_default(&mut self, new_default: V) {
         self.default = new_default;
@@ -82,21 +103,26 @@ impl<K: Eq + Hash, V: Clone> DefaultHashMap<K, V> {
     {
         self.map.get(key.borrow()).unwrap_or(&self.default)
     }
+}
 
+impl<K: Eq + Hash, V> DefaultHashMap<K, V> {
     /// Returns a mutable reference to the value stored for the provided key.
     /// If there is no value stored for the key the default value is first inserted for this
     /// key before returning the reference.
     /// Usually the `map[key] = new_val` is prefered over using `get_mut` directly.
     /// This method only accepts owned values as the key.
     pub fn get_mut(&mut self, key: K) -> &mut V {
-        let default = &self.default;
-        self.map.entry(key).or_insert_with(|| default.clone())
+        let entry = self.map.entry(key);
+        match entry {
+            Entry::Occupied(occupied) => occupied.into_mut(),
+            Entry::Vacant(vacant) => vacant.insert(self.default_fn.call()),
+        }
     }
 }
 
 /// Implements the `Index` trait so you can do `map[key]`.
 /// Nonmutable indexing can be done both by passing a reference or an owned value as the key.
-impl<'a, K: Eq + Hash, KB: Borrow<K>, V: Clone> Index<KB> for DefaultHashMap<K, V> {
+impl<'a, K: Eq + Hash, KB: Borrow<K>, V> Index<KB> for DefaultHashMap<K, V> {
     type Output = V;
 
     fn index(&self, index: KB) -> &V {
@@ -106,7 +132,7 @@ impl<'a, K: Eq + Hash, KB: Borrow<K>, V: Clone> Index<KB> for DefaultHashMap<K, 
 
 /// Implements the `IndexMut` trait so you can do `map[key] = val`.
 /// Mutably indexing can only be done when passing an owned value as the key.
-impl<K: Eq + Hash, V: Clone> IndexMut<K> for DefaultHashMap<K, V> {
+impl<K: Eq + Hash, V> IndexMut<K> for DefaultHashMap<K, V> {
     #[inline]
     fn index_mut(&mut self, index: K) -> &mut V {
         self.get_mut(index)
@@ -116,7 +142,7 @@ impl<K: Eq + Hash, V: Clone> IndexMut<K> for DefaultHashMap<K, V> {
 /// These methods simply forward to the underlying `HashMap`, see that
 /// [documentation](https://doc.rust-lang.org/std/collections/struct.HashMap.html) for
 /// the usage of these methods.
-impl<K: Eq + Hash, V: Clone> DefaultHashMap<K, V> {
+impl<K: Eq + Hash, V> DefaultHashMap<K, V> {
     pub fn capacity(&self) -> usize {
         self.map.capacity()
     }
@@ -189,15 +215,15 @@ impl<K: Eq + Hash, V: Clone> DefaultHashMap<K, V> {
         self.map.remove(k)
     }
     #[inline]
-    pub fn retain<F>(&mut self, f: F)
+    pub fn retain<RF>(&mut self, f: RF)
     where
-        F: FnMut(&K, &mut V) -> bool,
+        RF: FnMut(&K, &mut V) -> bool,
     {
         self.map.retain(f)
     }
 }
 
-impl<K: Eq + Hash, V: Default + Clone> FromIterator<(K, V)> for DefaultHashMap<K, V> {
+impl<K: Eq + Hash, V: Default> FromIterator<(K, V)> for DefaultHashMap<K, V> {
     fn from_iter<I>(iter: I) -> Self
     where
         I: IntoIterator<Item = (K, V)>,
@@ -205,6 +231,7 @@ impl<K: Eq + Hash, V: Default + Clone> FromIterator<(K, V)> for DefaultHashMap<K
         Self {
             map: HashMap::from_iter(iter),
             default: V::default(),
+            default_fn: Box::new(|| V::default()),
         }
     }
 }

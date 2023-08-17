@@ -1,18 +1,30 @@
+use derive_more::Debug;
 use std::borrow::Borrow;
 use std::collections::btree_map::*;
 use std::collections::BTreeMap;
-use std::hash::Hash;
 use std::iter::{FromIterator, IntoIterator};
 use std::ops::{Index, IndexMut};
 
 /// A `BTreeMap` that returns a default when keys are accessed that are not present.
-#[derive(PartialEq, Eq, Clone, Debug)]
-pub struct DefaultBTreeMap<K: Eq + Hash + Ord, V: Clone> {
+#[derive(Clone, Debug)]
+#[cfg_attr(feature = "with-serde", derive(serde::Serialize, serde::Deserialize))]
+pub struct DefaultBTreeMap<K: Eq + Ord, V> {
     map: BTreeMap<K, V>,
     default: V,
+    #[debug(skip)]
+    #[cfg_attr(feature = "with-serde", serde(skip))]
+    default_fn: Box<dyn crate::DefaultFn<V>>,
 }
 
-impl<K: Eq + Hash + Ord, V: Default + Clone> Default for DefaultBTreeMap<K, V> {
+impl<K: Eq + Ord, V: PartialEq> PartialEq for DefaultBTreeMap<K, V> {
+    fn eq(&self, other: &Self) -> bool {
+        self.map == other.map && self.default == other.default
+    }
+}
+
+impl<K: Eq + Ord, V: Eq> Eq for DefaultBTreeMap<K, V> {}
+
+impl<K: Eq + Ord, V: Default + Clone> Default for DefaultBTreeMap<K, V> {
     /// The `default()` constructor creates an empty DefaultBTreeMap with the default of `V`
     /// as the default for missing keys.
     /// This is desired default for most use cases, if your case requires a
@@ -20,12 +32,13 @@ impl<K: Eq + Hash + Ord, V: Default + Clone> Default for DefaultBTreeMap<K, V> {
     fn default() -> DefaultBTreeMap<K, V> {
         DefaultBTreeMap {
             map: BTreeMap::default(),
+            default_fn: Box::new(|| V::default()),
             default: V::default(),
         }
     }
 }
 
-impl<K: Eq + Hash + Ord, V: Default + Clone> From<BTreeMap<K, V>> for DefaultBTreeMap<K, V> {
+impl<K: Eq + Ord, V: Default> From<BTreeMap<K, V>> for DefaultBTreeMap<K, V> {
     /// If you already have a `BTreeMap` that you would like to convert to a
     /// `DefaultBTreeMap` you can use the `into()` method on the `BTreeMap` or the
     /// `from()` constructor of `DefaultBTreeMap`.
@@ -34,12 +47,13 @@ impl<K: Eq + Hash + Ord, V: Default + Clone> From<BTreeMap<K, V>> for DefaultBTr
     fn from(map: BTreeMap<K, V>) -> DefaultBTreeMap<K, V> {
         DefaultBTreeMap {
             map,
+            default_fn: Box::new(|| V::default()),
             default: V::default(),
         }
     }
 }
 
-impl<K: Eq + Hash + Ord, V: Clone> Into<BTreeMap<K, V>> for DefaultBTreeMap<K, V> {
+impl<K: Eq + Ord, V> Into<BTreeMap<K, V>> for DefaultBTreeMap<K, V> {
     /// The into method can be used to convert a `DefaultBTreeMap` back into a
     /// `BTreeMap`.
     fn into(self) -> BTreeMap<K, V> {
@@ -47,14 +61,15 @@ impl<K: Eq + Hash + Ord, V: Clone> Into<BTreeMap<K, V>> for DefaultBTreeMap<K, V
     }
 }
 
-impl<K: Eq + Hash + Ord, V: Clone> DefaultBTreeMap<K, V> {
-    /// Creates an empty `DefaultHashmap` with `default` as the default for missing keys.
+impl<K: Eq + Ord, V: Clone + 'static> DefaultBTreeMap<K, V> {
+    /// Creates an empty `DefaultBTreeMap` with `default` as the default for missing keys.
     /// When the provided `default` is equivalent to `V::default()` it is preferred to use
     /// `DefaultBTreeMap::default()` instead.
     pub fn new(default: V) -> DefaultBTreeMap<K, V> {
         DefaultBTreeMap {
             map: BTreeMap::new(),
-            default,
+            default: default.clone(),
+            default_fn: Box::new(move || default.clone()),
         }
     }
 
@@ -62,9 +77,15 @@ impl<K: Eq + Hash + Ord, V: Clone> DefaultBTreeMap<K, V> {
     /// If `V::default()` is the supplied default, usage of the `from()` constructor or the
     /// `into()` method on the original `BTreeMap` is preferred.
     pub fn new_with_map(default: V, map: BTreeMap<K, V>) -> DefaultBTreeMap<K, V> {
-        DefaultBTreeMap { map, default }
+        DefaultBTreeMap {
+            map,
+            default: default.clone(),
+            default_fn: Box::new(move || default.clone()),
+        }
     }
+}
 
+impl<K: Eq + Ord, V> DefaultBTreeMap<K, V> {
     /// Changes the default value permanently or until `set_default()` is called again.
     pub fn set_default(&mut self, new_default: V) {
         self.default = new_default;
@@ -72,30 +93,35 @@ impl<K: Eq + Hash + Ord, V: Clone> DefaultBTreeMap<K, V> {
 
     /// Returns a reference to the value stored for the provided key.
     /// If the key is not in the `DefaultBTreeMap` a reference to the default value is returned.
-    /// Usually the `map[key]` method of retrieving keys is prefered over using `get` directly.
+    /// Usually the `map[key]` method of retrieving keys is preferred over using `get` directly.
     /// This method accepts both references and owned values as the key.
     pub fn get<Q, QB: Borrow<Q>>(&self, key: QB) -> &V
     where
         K: Borrow<Q>,
-        Q: ?Sized + Hash + Eq + Ord,
+        Q: ?Sized + Ord + Eq,
     {
         self.map.get(key.borrow()).unwrap_or(&self.default)
     }
+}
 
+impl<K: Eq + Ord, V> DefaultBTreeMap<K, V> {
     /// Returns a mutable reference to the value stored for the provided key.
     /// If there is no value stored for the key the default value is first inserted for this
     /// key before returning the reference.
     /// Usually the `map[key] = new_val` is prefered over using `get_mut` directly.
     /// This method only accepts owned values as the key.
     pub fn get_mut(&mut self, key: K) -> &mut V {
-        let default = &self.default;
-        self.map.entry(key).or_insert_with(|| default.clone())
+        let entry = self.map.entry(key);
+        match entry {
+            Entry::Occupied(occupied) => occupied.into_mut(),
+            Entry::Vacant(vacant) => vacant.insert(self.default_fn.call()),
+        }
     }
 }
 
 /// Implements the `Index` trait so you can do `map[key]`.
 /// Nonmutable indexing can be done both by passing a reference or an owned value as the key.
-impl<'a, K: Eq + Hash + Ord, KB: Borrow<K>, V: Clone> Index<KB> for DefaultBTreeMap<K, V> {
+impl<'a, K: Eq + Ord, KB: Borrow<K>, V> Index<KB> for DefaultBTreeMap<K, V> {
     type Output = V;
 
     fn index(&self, index: KB) -> &V {
@@ -105,7 +131,7 @@ impl<'a, K: Eq + Hash + Ord, KB: Borrow<K>, V: Clone> Index<KB> for DefaultBTree
 
 /// Implements the `IndexMut` trait so you can do `map[key] = val`.
 /// Mutably indexing can only be done when passing an owned value as the key.
-impl<K: Eq + Hash + Ord, V: Clone> IndexMut<K> for DefaultBTreeMap<K, V> {
+impl<K: Eq + Ord, V> IndexMut<K> for DefaultBTreeMap<K, V> {
     #[inline]
     fn index_mut(&mut self, index: K) -> &mut V {
         self.get_mut(index)
@@ -115,7 +141,7 @@ impl<K: Eq + Hash + Ord, V: Clone> IndexMut<K> for DefaultBTreeMap<K, V> {
 /// These methods simply forward to the underlying `BTreeMap`, see that
 /// [documentation](https://doc.rust-lang.org/std/collections/struct.BTreeMap.html) for
 /// the usage of these methods.
-impl<K: Eq + Hash + Ord, V: Clone> DefaultBTreeMap<K, V> {
+impl<K: Eq + Ord, V> DefaultBTreeMap<K, V> {
     #[inline]
     pub fn keys(&self) -> Keys<K, V> {
         self.map.keys()
@@ -160,7 +186,7 @@ impl<K: Eq + Hash + Ord, V: Clone> DefaultBTreeMap<K, V> {
     pub fn contains_key<Q>(&self, k: &Q) -> bool
     where
         K: Borrow<Q>,
-        Q: ?Sized + Hash + Eq + Ord,
+        Q: ?Sized + Ord,
     {
         self.map.contains_key(k)
     }
@@ -168,13 +194,20 @@ impl<K: Eq + Hash + Ord, V: Clone> DefaultBTreeMap<K, V> {
     pub fn remove<Q>(&mut self, k: &Q) -> Option<V>
     where
         K: Borrow<Q>,
-        Q: ?Sized + Hash + Eq + Ord,
+        Q: ?Sized + Ord,
     {
         self.map.remove(k)
     }
+    #[inline]
+    pub fn retain<RF>(&mut self, f: RF)
+    where
+        RF: FnMut(&K, &mut V) -> bool,
+    {
+        self.map.retain(f)
+    }
 }
 
-impl<K: Eq + Hash + Ord, V: Default + Clone> FromIterator<(K, V)> for DefaultBTreeMap<K, V> {
+impl<K: Eq + Ord, V: Default> FromIterator<(K, V)> for DefaultBTreeMap<K, V> {
     fn from_iter<I>(iter: I) -> Self
     where
         I: IntoIterator<Item = (K, V)>,
@@ -182,6 +215,7 @@ impl<K: Eq + Hash + Ord, V: Default + Clone> FromIterator<(K, V)> for DefaultBTr
         Self {
             map: BTreeMap::from_iter(iter),
             default: V::default(),
+            default_fn: Box::new(|| V::default()),
         }
     }
 }
@@ -354,7 +388,6 @@ mod tests {
         assert_eq!(synonym_map["good"], vec!["nice"]);
         assert_eq!(synonym_map["nice"], vec!["sweet", "entertaining", "good"]);
         assert_eq!(synonym_map["evil"], Vec::<&str>::new());
-        // assert!(false)
     }
 
     #[derive(Clone)]
@@ -363,13 +396,13 @@ mod tests {
     #[derive(Default, Clone)]
     struct DefaultableValue;
 
-    #[derive(Hash, Eq, PartialEq, Ord, PartialOrd)]
-    struct Hashable(i32);
+    #[derive(Ord, PartialOrd, Eq, PartialEq)]
+    struct Orderable(i32);
 
     #[test]
     fn minimal_derives() {
-        let _: DefaultBTreeMap<Hashable, Clonable> = DefaultBTreeMap::new(Clonable);
-        let _: DefaultBTreeMap<Hashable, DefaultableValue> = DefaultBTreeMap::default();
+        let _: DefaultBTreeMap<Orderable, Clonable> = DefaultBTreeMap::new(Clonable);
+        let _: DefaultBTreeMap<Orderable, DefaultableValue> = DefaultBTreeMap::default();
     }
 
     #[test]
@@ -421,7 +454,7 @@ mod tests {
         }
 
         #[test]
-        fn std_hashmap() {
+        fn std_btreemap() {
             let h1: DefaultBTreeMap<i32, i32> = defaultbtreemap!(1=> 10, 2=> 20);
             let stdhm: std::collections::BTreeMap<i32, i32> = h1.clone().into();
             let s = serde_json::to_string(&stdhm).unwrap();

@@ -65,6 +65,10 @@
 //! ```
 //!
 
+mod default_fn;
+
+pub use default_fn::DefaultFn;
+
 mod btreemap;
 mod hashmap;
 
