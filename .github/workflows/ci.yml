@@ -103,11 +103,9 @@ jobs:
     needs:
       - clippy
       - msrv
-      - no_std
       - rustdoc
       - rustfmt
       - test
-      - test-features
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
