@@ -475,7 +475,6 @@ mod tests {
         map[0] += 1;
         assert_eq!(21, map[0]);
         assert_eq!(20, map[1]);
-
     }
 
     #[test]
