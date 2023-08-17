@@ -35,7 +35,7 @@ with-serde = ["dep:serde"]
 [dependencies]
 derive_more = { version = "=1.0.0-beta.3", features = ["debug"] }
 dyn-clone = "1.0.13"
-serde = { version = "1.0.0", features = ["derive"], optional = true}
+serde = { version = "1.0.183", features = ["derive"], optional = true}
 
 [dev-dependencies]
 serde_json = "1.0"
