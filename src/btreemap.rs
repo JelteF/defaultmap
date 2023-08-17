@@ -83,14 +83,15 @@ impl<K: Eq + Ord, V: Clone + 'static> DefaultBTreeMap<K, V> {
             default_fn: Box::new(move || default.clone()),
         }
     }
+
+    /// Changes the default value permanently or until `set_default()` is called again.
+    pub fn set_default(&mut self, new_default: V) {
+        self.default = new_default.clone();
+        self.default_fn = Box::new(move || new_default.clone());
+    }
 }
 
 impl<K: Eq + Ord, V> DefaultBTreeMap<K, V> {
-    /// Changes the default value permanently or until `set_default()` is called again.
-    pub fn set_default(&mut self, new_default: V) {
-        self.default = new_default;
-    }
-
     /// Returns a reference to the value stored for the provided key.
     /// If the key is not in the `DefaultBTreeMap` a reference to the default value is returned.
     /// Usually the `map[key]` method of retrieving keys is preferred over using `get` directly.
