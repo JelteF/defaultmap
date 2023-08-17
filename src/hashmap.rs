@@ -104,6 +104,11 @@ impl<K: Eq + Hash, V> DefaultHashMap<K, V> {
     {
         self.map.get(key.borrow()).unwrap_or(&self.default)
     }
+
+    /// Returns the an owned version of the default value
+    pub fn get_default(&self) -> V {
+        self.default_fn.call()
+    }
 }
 
 impl<K: Eq + Hash, V> DefaultHashMap<K, V> {
