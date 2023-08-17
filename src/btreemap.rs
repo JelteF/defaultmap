@@ -53,11 +53,11 @@ impl<K: Eq + Ord, V: Default> From<BTreeMap<K, V>> for DefaultBTreeMap<K, V> {
     }
 }
 
-impl<K: Eq + Ord, V> Into<BTreeMap<K, V>> for DefaultBTreeMap<K, V> {
+impl<K: Eq + Ord, V> From<DefaultBTreeMap<K, V>> for BTreeMap<K, V> {
     /// The into method can be used to convert a `DefaultBTreeMap` back into a
     /// `BTreeMap`.
-    fn into(self) -> BTreeMap<K, V> {
-        self.map
+    fn from(default_map: DefaultBTreeMap<K, V>) -> BTreeMap<K, V> {
+        default_map.map
     }
 }
 
@@ -121,7 +121,7 @@ impl<K: Eq + Ord, V> DefaultBTreeMap<K, V> {
 
 /// Implements the `Index` trait so you can do `map[key]`.
 /// Nonmutable indexing can be done both by passing a reference or an owned value as the key.
-impl<'a, K: Eq + Ord, KB: Borrow<K>, V> Index<KB> for DefaultBTreeMap<K, V> {
+impl<K: Eq + Ord, KB: Borrow<K>, V> Index<KB> for DefaultBTreeMap<K, V> {
     type Output = V;
 
     fn index(&self, index: KB) -> &V {
