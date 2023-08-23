@@ -1,6 +1,7 @@
 use derive_more::Debug;
 use std::borrow::Borrow;
 use std::collections::btree_map::*;
+use std::ops::RangeBounds;
 use std::collections::BTreeMap;
 use std::iter::{FromIterator, IntoIterator};
 use std::ops::{Index, IndexMut};
@@ -183,44 +184,50 @@ impl<K: Eq + Ord, V> IndexMut<K> for DefaultBTreeMap<K, V> {
 /// the usage of these methods.
 impl<K: Eq + Ord, V> DefaultBTreeMap<K, V> {
     #[inline]
-    pub fn keys(&self) -> Keys<K, V> {
-        self.map.keys()
-    }
-    #[inline]
-    pub fn values(&self) -> Values<K, V> {
-        self.map.values()
-    }
-    #[inline]
-    pub fn values_mut(&mut self) -> ValuesMut<K, V> {
-        self.map.values_mut()
-    }
-    #[inline]
-    pub fn iter(&self) -> Iter<K, V> {
-        self.map.iter()
-    }
-    #[inline]
-    pub fn iter_mut(&mut self) -> IterMut<K, V> {
-        self.map.iter_mut()
-    }
-    #[inline]
-    pub fn entry(&mut self, key: K) -> Entry<K, V> {
-        self.map.entry(key)
-    }
-    #[inline]
-    pub fn len(&self) -> usize {
-        self.map.len()
-    }
-    #[inline]
-    pub fn is_empty(&self) -> bool {
-        self.map.is_empty()
-    }
-    #[inline]
     pub fn clear(&mut self) {
         self.map.clear()
     }
     #[inline]
-    pub fn insert(&mut self, k: K, v: V) -> Option<V> {
-        self.map.insert(k, v)
+    pub fn first_key_value(&self) -> Option<(&K, &V)>
+    where
+        K: Ord,
+    {
+        self.map.first_key_value()
+    }
+    #[inline]
+    pub fn first_entry(&mut self) -> Option<OccupiedEntry<'_, K, V>>
+    where
+        K: Ord,
+    {
+        self.map.first_entry()
+    }
+    #[inline]
+    pub fn pop_first(&mut self) -> Option<(K, V)>
+    where
+        K: Ord,
+    {
+        self.map.pop_first()
+    }
+    #[inline]
+    pub fn last_key_value(&self) -> Option<(&K, &V)>
+    where
+        K: Ord,
+    {
+        self.map.last_key_value()
+    }
+    #[inline]
+    pub fn last_entry(&mut self) -> Option<OccupiedEntry<'_, K, V>>
+    where
+        K: Ord,
+    {
+        self.map.last_entry()
+    }
+    #[inline]
+    pub fn pop_last(&mut self) -> Option<(K, V)>
+    where
+        K: Ord,
+    {
+        self.map.pop_last()
     }
     #[inline]
     pub fn contains_key<Q>(&self, k: &Q) -> bool
@@ -229,6 +236,10 @@ impl<K: Eq + Ord, V> DefaultBTreeMap<K, V> {
         Q: ?Sized + Ord,
     {
         self.map.contains_key(k)
+    }
+    #[inline]
+    pub fn insert(&mut self, k: K, v: V) -> Option<V> {
+        self.map.insert(k, v)
     }
     #[inline]
     pub fn remove<Q>(&mut self, k: &Q) -> Option<V>
@@ -244,6 +255,70 @@ impl<K: Eq + Ord, V> DefaultBTreeMap<K, V> {
         RF: FnMut(&K, &mut V) -> bool,
     {
         self.map.retain(f)
+    }
+    #[inline]
+    pub fn append(&mut self, other: &mut Self)
+    {
+        self.map.append(&mut other.map)
+    }
+    #[inline]
+    pub fn range<T: ?Sized, R>(&self, range: R) -> Range<'_, K, V>
+    where
+        T: Ord,
+        K: Borrow<T> + Ord,
+        R: RangeBounds<T>,
+    {
+        self.map.range(range)
+    }
+    #[inline]
+    pub fn range_mut<T: ?Sized, R>(&mut self, range: R) -> RangeMut<'_, K, V>
+    where
+        T: Ord,
+        K: Borrow<T> + Ord,
+        R: RangeBounds<T>,
+    {
+        self.map.range_mut(range)
+    }
+    #[inline]
+    pub fn entry(&mut self, key: K) -> Entry<K, V> {
+        self.map.entry(key)
+    }
+    #[inline]
+    pub fn into_keys(self) -> IntoKeys<K, V> {
+        self.map.into_keys()
+    }
+    #[inline]
+    pub fn into_values(self) -> IntoValues<K, V> {
+        self.map.into_values()
+    }
+
+    #[inline]
+    pub fn iter(&self) -> Iter<K, V> {
+        self.map.iter()
+    }
+    #[inline]
+    pub fn iter_mut(&mut self) -> IterMut<K, V> {
+        self.map.iter_mut()
+    }
+    #[inline]
+    pub fn keys(&self) -> Keys<K, V> {
+        self.map.keys()
+    }
+    #[inline]
+    pub fn values(&self) -> Values<K, V> {
+        self.map.values()
+    }
+    #[inline]
+    pub fn values_mut(&mut self) -> ValuesMut<K, V> {
+        self.map.values_mut()
+    }
+    #[inline]
+    pub fn len(&self) -> usize {
+        self.map.len()
+    }
+    #[inline]
+    pub fn is_empty(&self) -> bool {
+        self.map.is_empty()
     }
 }
 

@@ -1,6 +1,7 @@
 use derive_more::Debug;
 use std::borrow::Borrow;
 use std::collections::hash_map::*;
+use std::collections::TryReserveError;
 use std::collections::HashMap;
 use std::hash::Hash;
 use std::iter::{FromIterator, IntoIterator};
@@ -187,16 +188,12 @@ impl<K: Eq + Hash, V> DefaultHashMap<K, V> {
         self.map.capacity()
     }
     #[inline]
-    pub fn reserve(&mut self, additional: usize) {
-        self.map.reserve(additional)
-    }
-    #[inline]
-    pub fn shrink_to_fit(&mut self) {
-        self.map.shrink_to_fit()
-    }
-    #[inline]
     pub fn keys(&self) -> Keys<K, V> {
         self.map.keys()
+    }
+    #[inline]
+    pub fn into_keys(self) -> IntoKeys<K, V> {
+        self.map.into_keys()
     }
     #[inline]
     pub fn values(&self) -> Values<K, V> {
@@ -207,16 +204,16 @@ impl<K: Eq + Hash, V> DefaultHashMap<K, V> {
         self.map.values_mut()
     }
     #[inline]
+    pub fn into_values(self) -> IntoValues<K, V> {
+        self.map.into_values()
+    }
+    #[inline]
     pub fn iter(&self) -> Iter<K, V> {
         self.map.iter()
     }
     #[inline]
     pub fn iter_mut(&mut self) -> IterMut<K, V> {
         self.map.iter_mut()
-    }
-    #[inline]
-    pub fn entry(&mut self, key: K) -> Entry<K, V> {
-        self.map.entry(key)
     }
     #[inline]
     pub fn len(&self) -> usize {
@@ -231,9 +228,37 @@ impl<K: Eq + Hash, V> DefaultHashMap<K, V> {
         self.map.drain()
     }
     #[inline]
+    pub fn retain<RF>(&mut self, f: RF)
+    where
+        RF: FnMut(&K, &mut V) -> bool,
+    {
+        self.map.retain(f)
+    }
+    #[inline]
     pub fn clear(&mut self) {
         self.map.clear()
     }
+    #[inline]
+    pub fn reserve(&mut self, additional: usize) {
+        self.map.reserve(additional)
+    }
+    #[inline]
+    pub fn try_reserve(&mut self, additional: usize) -> Result<(), TryReserveError> {
+        self.map.try_reserve(additional)
+    }
+    #[inline]
+    pub fn shrink_to_fit(&mut self) {
+        self.map.shrink_to_fit()
+    }
+    #[inline]
+    pub fn shrink_to(&mut self, min_capacity: usize) {
+        self.map.shrink_to(min_capacity);
+    }
+    #[inline]
+    pub fn entry(&mut self, key: K) -> Entry<K, V> {
+        self.map.entry(key)
+    }
+
     #[inline]
     pub fn insert(&mut self, k: K, v: V) -> Option<V> {
         self.map.insert(k, v)
@@ -255,12 +280,14 @@ impl<K: Eq + Hash, V> DefaultHashMap<K, V> {
         self.map.remove(k)
     }
     #[inline]
-    pub fn retain<RF>(&mut self, f: RF)
+    pub fn remove_entry<Q: ?Sized>(&mut self, k: &Q) -> Option<(K, V)>
     where
-        RF: FnMut(&K, &mut V) -> bool,
+        K: Borrow<Q>,
+        Q: Hash + Eq,
     {
-        self.map.retain(f)
+        self.map.remove_entry(k)
     }
+
 }
 
 impl<K: Eq + Hash, V: Default> FromIterator<(K, V)> for DefaultHashMap<K, V> {
