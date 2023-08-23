@@ -85,6 +85,21 @@ jobs:
           - nightly
     runs-on: ${{ matrix.os }}-latest
     steps:
+      - name: Cache cargo registry
+        uses: actions/cache@v3
+        with:
+            path: ~/.cargo/registry
+            key: ${{ runner.os }}-cargo-registry-${{ hashFiles('**/Cargo.lock') }}
+      - name: Cache cargo index
+        uses: actions/cache@v3
+        with:
+            path: ~/.cargo/git
+            key: ${{ runner.os }}-cargo-index-${{ hashFiles('**/Cargo.lock') }}
+      - name: Cache cargo binaries
+        uses: actions/cache@v3
+        with:
+            path: ~/.cargo/bin
+            key: ${{ runner.os }}-cargo-bin-${{ hashFiles('**/Cargo.lock') }}
       - uses: actions/checkout@v3
       - uses: dtolnay/rust-toolchain@v1
         with:
@@ -96,11 +111,12 @@ jobs:
         env:
           CARGO_INCREMENTAL: '0'
           RUSTFLAGS: '-Cinstrument-coverage'
+          RUSTDOCFLAGS: "-Cinstrument-coverage"
           LLVM_PROFILE_FILE: 'defaultmap-%p-%m.profraw'
-      - name: rust-grcov
-        # You may pin to the exact commit or the version.
-        # uses: actions-rs/grcov@bb47b1ed7883a1502fa6875d562727ace2511248
-        uses: actions-rs/grcov@v0.1
+      - name: Install grcov
+        run: if [[ ! -e ~/.cargo/bin/grcov ]]; then cargo install grcov; fi
+      - name: Run grcov
+        run: grcov . --binary-path target/debug/deps/ -s . -t lcov --branch --ignore-not-existing --ignore '../**' --ignore '/*' -o coverage.lcov
       - name: Codecov
         # You may pin to the exact commit or the version.
         # uses: codecov/codecov-action@81cd2dc8148241f03f5839d295e000b8f761e378
