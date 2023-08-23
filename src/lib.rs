@@ -16,10 +16,10 @@
 //!
 //! let nums = [1, 4, 3, 3, 4, 2, 4];
 //! let mut counts: DefaultHashMap<i32, i32> = defaulthashmap!();
-//! // DefaultHashMap::new(0) is equivalent.
+//! // DefaultHashMap::new() is equivalent.
 //!
 //! for num in nums.into_iter() {
-//!     counts[*num] += 1;
+//!     counts[num] += 1;
 //! }
 //!
 //! println!("{:?}", counts);
@@ -52,9 +52,9 @@
 //! ];
 //!
 //! let mut synonym_map: DefaultHashMap<&str, Vec<&str>> = defaulthashmap!();
-//! // DefaultHashMap::new(vec![]) is equivalent.
+//! // DefaultHashMap::new() is equivalent.
 //!
-//! for &(l, r) in synonym_tuples.into_iter() {
+//! for (l, r) in synonym_tuples.into_iter() {
 //!     synonym_map[l].push(r);
 //!     synonym_map[r].push(l);
 //! }

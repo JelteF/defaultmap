@@ -27,12 +27,12 @@ impl<K: Eq + Hash, V: PartialEq> PartialEq for DefaultHashMap<K, V> {
 
 impl<K: Eq + Hash, V: Eq> Eq for DefaultHashMap<K, V> {}
 
-impl<K: Eq + Hash, V: Default + Clone> Default for DefaultHashMap<K, V> {
-    /// The `default()` constructor creates an empty DefaultHashMap with the default of `V`
+impl<K: Eq + Hash, V: Default> DefaultHashMap<K, V> {
+    /// The `new()` constructor creates an empty DefaultHashMap with the default of `V`
     /// as the default for missing keys.
     /// This is desired default for most use cases, if your case requires a
-    /// different default you should use the `new()` constructor.
-    fn default() -> DefaultHashMap<K, V> {
+    /// different default you should use the `with_default()` constructor.
+    fn new() -> DefaultHashMap<K, V> {
         DefaultHashMap {
             map: HashMap::default(),
             default_fn: Box::new(|| V::default()),
@@ -41,12 +41,19 @@ impl<K: Eq + Hash, V: Default + Clone> Default for DefaultHashMap<K, V> {
     }
 }
 
+impl<K: Eq + Hash, V: Default> Default for DefaultHashMap<K, V> {
+    /// The `default()` method is equivalent to `DefaultHashMap::new()`.
+    fn default() -> DefaultHashMap<K, V> {
+        DefaultHashMap::new()
+    }
+}
+
 impl<K: Eq + Hash, V: Default> From<HashMap<K, V>> for DefaultHashMap<K, V> {
     /// If you already have a `HashMap` that you would like to convert to a
     /// `DefaultHashMap` you can use the `into()` method on the `HashMap` or the
     /// `from()` constructor of `DefaultHashMap`.
     /// The default value for missing keys will be `V::default()`,
-    /// if this is not desired `DefaultHashMap::new_with_map()` should be used.
+    /// if this is not desired `DefaultHashMap::from_map_with_default()` should be used.
     fn from(map: HashMap<K, V>) -> DefaultHashMap<K, V> {
         DefaultHashMap {
             map,
@@ -68,7 +75,7 @@ impl<K: Eq + Hash, V: Clone + 'static> DefaultHashMap<K, V> {
     /// Creates an empty `DefaultHashMap` with `default` as the default for missing keys.
     /// When the provided `default` is equivalent to `V::default()` it is preferred to use
     /// `DefaultHashMap::default()` instead.
-    pub fn new(default: V) -> DefaultHashMap<K, V> {
+    pub fn with_default(default: V) -> DefaultHashMap<K, V> {
         DefaultHashMap {
             map: HashMap::new(),
             default: default.clone(),
@@ -79,7 +86,7 @@ impl<K: Eq + Hash, V: Clone + 'static> DefaultHashMap<K, V> {
     /// Creates a `DefaultHashMap` based on a default and an already existing `HashMap`.
     /// If `V::default()` is the supplied default, usage of the `from()` constructor or the
     /// `into()` method on the original `HashMap` is preferred.
-    pub fn new_with_map(default: V, map: HashMap<K, V>) -> DefaultHashMap<K, V> {
+    pub fn from_map_with_default(map: HashMap<K, V>, default: V) -> DefaultHashMap<K, V> {
         DefaultHashMap {
             map,
             default: default.clone(),
@@ -115,7 +122,7 @@ impl<K: Eq + Hash, V> DefaultHashMap<K, V> {
     /// Creates an empty `DefaultHashMap` with `default_fn` as the default value generation
     /// function for missing keys. When the provided `default_fn` only calls clone on a value,
     /// using `DefaultHashMap::new` is preferred.
-    pub fn from_fn(default_fn: impl DefaultFn<V> + 'static) -> DefaultHashMap<K, V> {
+    pub fn with_fn(default_fn: impl DefaultFn<V> + 'static) -> DefaultHashMap<K, V> {
         DefaultHashMap {
             map: HashMap::new(),
             default: default_fn.call(),
@@ -126,7 +133,7 @@ impl<K: Eq + Hash, V> DefaultHashMap<K, V> {
     /// Creates a `DefaultHashMap` based on an existing map and using `default_fn` as the default
     /// value generation function for missing keys. When the provided `default_fn` is equivalent to
     /// V::default(), then using `DefaultHashMap::from(map)` is preferred.
-    pub fn from_map_and_fn(
+    pub fn from_map_with_fn(
         map: HashMap<K, V>,
         default_fn: impl DefaultFn<V> + 'static,
     ) -> DefaultHashMap<K, V> {
@@ -324,7 +331,7 @@ macro_rules! defaulthashmap {
     ($default:expr$(, $key:expr => $value:expr)*) => {
         {
             let _map = defaulthashmap!(@hashmap $($key => $value),*);
-            $crate::DefaultHashMap::new_with_map($default, _map)
+            $crate::DefaultHashMap::from_map_with_default(_map, $default)
         }
     };
 }
@@ -353,7 +360,7 @@ mod tests {
 
         // empty with custom default
         let macro_map: DefaultHashMap<i32, i32> = defaulthashmap! {5};
-        let normal_map = DefaultHashMap::<i32, i32>::new(5);
+        let normal_map = DefaultHashMap::<i32, i32>::with_default(5);
         assert_eq!(macro_map, normal_map);
 
         // filled hashmap with custom default
@@ -362,7 +369,7 @@ mod tests {
             1 => 2,
             2 => 3,
         };
-        let mut normal_map = DefaultHashMap::<_, _>::new(5);
+        let mut normal_map = DefaultHashMap::<_, _>::with_default(5);
         normal_map[1] = 2;
         normal_map[2] = 3;
         assert_eq!(macro_map, normal_map);
@@ -403,7 +410,8 @@ mod tests {
 
     #[test]
     fn change_default() {
-        let mut numbers: DefaultHashMap<i32, String> = DefaultHashMap::new("Mexico".to_string());
+        let mut numbers: DefaultHashMap<i32, String> =
+            DefaultHashMap::with_default("Mexico".to_string());
 
         assert_eq!("Mexico", numbers.get_mut(1));
         assert_eq!("Mexico", numbers.get_mut(2));
@@ -451,7 +459,7 @@ mod tests {
 
     #[test]
     fn minimal_derives() {
-        let _: DefaultHashMap<Hashable, Clonable> = DefaultHashMap::new(Clonable);
+        let _: DefaultHashMap<Hashable, Clonable> = DefaultHashMap::with_default(Clonable);
         let _: DefaultHashMap<Hashable, DefaultableValue> = DefaultHashMap::default();
     }
 
@@ -469,19 +477,19 @@ mod tests {
     }
 
     #[test]
-    fn from_fn() {
+    fn with_fn() {
         let i: i32 = 20;
-        let mut map = DefaultHashMap::from_fn(move || i);
+        let mut map = DefaultHashMap::with_fn(move || i);
         map[0] += 1;
         assert_eq!(21, map[0]);
         assert_eq!(20, map[1]);
     }
 
     #[test]
-    fn from_map_and_fn() {
+    fn from_map_with_fn() {
         let i: i32 = 20;
         let normal: HashMap<i32, i32> = vec![(0, 1), (2, 3)].into_iter().collect();
-        let mut map = DefaultHashMap::from_map_and_fn(normal, move || i);
+        let mut map = DefaultHashMap::from_map_with_fn(normal, move || i);
         map[0] += 1;
         assert_eq!(map[0], 2);
         assert_eq!(map[1], 20);
@@ -517,7 +525,7 @@ mod tests {
 
         #[test]
         fn serialize_default() {
-            let h1: DefaultHashMap<&str, u64> = DefaultHashMap::new(42);
+            let h1: DefaultHashMap<&str, u64> = DefaultHashMap::with_default(42);
             let s = serde_json::to_string(&h1).unwrap();
             let h2: DefaultHashMap<&str, u64> = serde_json::from_str(&s).unwrap();
             assert_eq!(h2["answer"], 42);
@@ -528,8 +536,10 @@ mod tests {
             let h1: DefaultHashMap<i32, i32> = defaulthashmap!(1=> 10, 2=> 20);
             let stdhm: std::collections::HashMap<i32, i32> = h1.clone().into();
             let s = serde_json::to_string(&stdhm).unwrap();
-            let h2: DefaultHashMap<i32, i32> =
-                DefaultHashMap::new_with_map(i32::default(), serde_json::from_str(&s).unwrap());
+            let h2: DefaultHashMap<i32, i32> = DefaultHashMap::from_map_with_default(
+                serde_json::from_str(&s).unwrap(),
+                i32::default(),
+            );
             assert_eq!(h1, h2);
         }
     }
