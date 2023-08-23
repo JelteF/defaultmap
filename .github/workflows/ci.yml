@@ -43,8 +43,6 @@ jobs:
       - run: cargo +nightly fmt --all -- --check
 
 
-
-
   ###########
   # Testing #
   ###########
@@ -98,6 +96,7 @@ jobs:
         env:
           CARGO_INCREMENTAL: '0'
           RUSTFLAGS: '-Cinstrument-coverage'
+          LLVM_PROFILE_FILE: 'defaultmap-%p-%m.profraw'
       - name: rust-grcov
         # You may pin to the exact commit or the version.
         # uses: actions-rs/grcov@bb47b1ed7883a1502fa6875d562727ace2511248
