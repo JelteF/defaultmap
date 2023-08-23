@@ -1,8 +1,8 @@
 use derive_more::Debug;
 use std::borrow::Borrow;
 use std::collections::hash_map::*;
-use std::collections::TryReserveError;
 use std::collections::HashMap;
+use std::collections::TryReserveError;
 use std::hash::Hash;
 use std::iter::{FromIterator, IntoIterator};
 use std::ops::{Index, IndexMut};
@@ -287,7 +287,6 @@ impl<K: Eq + Hash, V> DefaultHashMap<K, V> {
     {
         self.map.remove_entry(k)
     }
-
 }
 
 impl<K: Eq + Hash, V: Default> FromIterator<(K, V)> for DefaultHashMap<K, V> {

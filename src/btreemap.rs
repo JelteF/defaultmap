@@ -1,9 +1,9 @@
 use derive_more::Debug;
 use std::borrow::Borrow;
 use std::collections::btree_map::*;
-use std::ops::RangeBounds;
 use std::collections::BTreeMap;
 use std::iter::{FromIterator, IntoIterator};
+use std::ops::RangeBounds;
 use std::ops::{Index, IndexMut};
 
 use crate::DefaultFn;
@@ -257,8 +257,7 @@ impl<K: Eq + Ord, V> DefaultBTreeMap<K, V> {
         self.map.retain(f)
     }
     #[inline]
-    pub fn append(&mut self, other: &mut Self)
-    {
+    pub fn append(&mut self, other: &mut Self) {
         self.map.append(&mut other.map)
     }
     #[inline]
