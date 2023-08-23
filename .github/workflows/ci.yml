@@ -115,7 +115,7 @@ jobs:
       - name: Install grcov
         run: if [[ ! -e ~/.cargo/bin/grcov ]]; then cargo install grcov; fi
       - name: Run grcov
-        run: grcov . --binary-path target/debug/deps/ -s . -t lcov --branch --ignore-not-existing --ignore '../**' --ignore '/*' -o coverage.lcov
+        run: grcov . --binary-path target/debug/deps/ -s . -t lcov --branch --ignore-not-existing --ignore '../**' --ignore '/*' -o coverage.lcov --excl-start grcov-excl-start --excl-stop grcov-excl-stop
       - name: Codecov
         # You may pin to the exact commit or the version.
         # uses: codecov/codecov-action@81cd2dc8148241f03f5839d295e000b8f761e378
