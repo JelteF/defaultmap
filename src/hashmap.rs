@@ -180,6 +180,7 @@ impl<K: Eq + Hash, V> IndexMut<K> for DefaultHashMap<K, V> {
     }
 }
 
+// grcov-excl-start
 /// These methods simply forward to the underlying `HashMap`, see that
 /// [documentation](https://doc.rust-lang.org/std/collections/struct.HashMap.html) for
 /// the usage of these methods.
@@ -288,6 +289,7 @@ impl<K: Eq + Hash, V> DefaultHashMap<K, V> {
         self.map.remove_entry(k)
     }
 }
+// grcov-excl-stop
 
 impl<K: Eq + Hash, V: Default> FromIterator<(K, V)> for DefaultHashMap<K, V> {
     fn from_iter<I>(iter: I) -> Self

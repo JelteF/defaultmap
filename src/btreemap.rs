@@ -179,6 +179,7 @@ impl<K: Eq + Ord, V> IndexMut<K> for DefaultBTreeMap<K, V> {
     }
 }
 
+// grcov-excl-start
 /// These methods simply forward to the underlying `BTreeMap`, see that
 /// [documentation](https://doc.rust-lang.org/std/collections/struct.BTreeMap.html) for
 /// the usage of these methods.
@@ -320,6 +321,7 @@ impl<K: Eq + Ord, V> DefaultBTreeMap<K, V> {
         self.map.is_empty()
     }
 }
+// grcov-excl-stop
 
 impl<K: Eq + Ord, V: Default> FromIterator<(K, V)> for DefaultBTreeMap<K, V> {
     fn from_iter<I>(iter: I) -> Self
