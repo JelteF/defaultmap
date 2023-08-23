@@ -146,10 +146,6 @@ jobs:
           toolchain: ${{ matrix.toolchain }}
 
       - run: cargo test --all-features
-      - name: rust-grcov
-        # You may pin to the exact commit or the version.
-        # uses: actions-rs/grcov@bb47b1ed7883a1502fa6875d562727ace2511248
-        uses: actions-rs/grcov@v0.1
 
   #################
   # Documentation #
