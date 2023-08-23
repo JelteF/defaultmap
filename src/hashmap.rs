@@ -33,7 +33,7 @@ impl<K: Eq + Hash, V: Default> DefaultHashMap<K, V> {
     /// as the default for missing keys.
     /// This is desired default for most use cases, if your case requires a
     /// different default you should use the `with_default()` constructor.
-    fn new() -> DefaultHashMap<K, V> {
+    pub fn new() -> DefaultHashMap<K, V> {
         DefaultHashMap {
             map: HashMap::default(),
             default_fn: Box::new(|| V::default()),
@@ -116,6 +116,10 @@ impl<K: Eq + Hash, V> DefaultHashMap<K, V> {
     }
 
     /// Returns the an owned version of the default value
+    /// ```
+    /// use defaultmap::DefaultHashMap;
+    /// assert_eq!(DefaultHashMap::<String, i32>::new().get_default(), 0);
+    /// ```
     pub fn get_default(&self) -> V {
         self.default_fn.call()
     }

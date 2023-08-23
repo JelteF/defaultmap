@@ -32,7 +32,7 @@ impl<K: Eq + Ord, V: Default> DefaultBTreeMap<K, V> {
     /// as the default for missing keys.
     /// This is desired default for most use cases, if your case requires a
     /// different default you should use the `with_default()` constructor.
-    fn new() -> DefaultBTreeMap<K, V> {
+    pub fn new() -> DefaultBTreeMap<K, V> {
         DefaultBTreeMap {
             map: BTreeMap::default(),
             default_fn: Box::new(|| V::default()),
@@ -115,6 +115,10 @@ impl<K: Eq + Ord, V> DefaultBTreeMap<K, V> {
     }
 
     /// Returns the an owned version of the default value
+    /// ```
+    /// use defaultmap::DefaultBTreeMap;
+    /// assert_eq!(DefaultBTreeMap::<String, i32>::new().get_default(), 0);
+    /// ```
     pub fn get_default(&self) -> V {
         self.default_fn.call()
     }
