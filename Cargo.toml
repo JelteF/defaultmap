@@ -24,6 +24,9 @@ appveyor = { repository = "JelteF/defaultmap" }
 features = ["with-serde"]
 rustdoc-args = ["--cfg", "docsrs"]
 
+[lints.rust]
+unexpected_cfgs = { level = "warn", check-cfg = ["cfg(ci)"] }
+
 [features]
 default = []
 with-serde = ["dep:serde"]
